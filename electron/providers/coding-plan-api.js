@@ -4,6 +4,7 @@
 const crypto = require('node:crypto');
 const SOURCE = { name: 'CC Switch', revision: 'd35726e28695844deaf0098450b34911f5be7b78', url: 'https://github.com/farion1231/cc-switch', license: 'MIT' };
 const TYPES = {
+  ...Object.fromEntries(Object.entries(require('./quota-catalog.json')).filter(([type]) => type !== 'xfyun')),
   volcengine: { name: '火山方舟', url: 'https://ark.cn-beijing.volces.com/api/coding', auth: 'aksk' },
   opencodego: { name: 'OpenCode Go', url: 'https://opencode.ai/zen/go/v1', auth: 'key' },
   kimi: { name: 'Kimi Coding', url: 'https://api.kimi.com/coding/v1', auth: 'key' },
@@ -157,4 +158,4 @@ function toMonitor(tiers, { kind, url, source = SOURCE, now = Date.now() } = {})
   return { plans: tiers.map(t => ({ name: names[WINDOWS.indexOf(t.name)], percentage: t.utilization, period: t.name, resetsAt: t.resetsAt, usedValueUsd: t.usedValueUsd, maxValueUsd: t.maxValueUsd })),
     countdowns: WINDOWS.map(name => { const at = Date.parse(tiers.find(t => t.name === name)?.resetsAt); return Number.isFinite(at) ? Math.max(0, at - now) : null; }), url, source, _fetchTime: now };
 }
-module.exports = { SOURCE, TYPES, WINDOWS, QueryError, requestJson, resetTime, parseCoding, parseAgent, signVolcengine, queryVolcengine, queryKey, toMonitor };
+module.exports = { SOURCE, TYPES, WINDOWS, QueryError, requestJson, resetTime, parseCoding, parseAgent, parseZhipu, signVolcengine, queryVolcengine, queryKey, toMonitor };

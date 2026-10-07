@@ -67,6 +67,7 @@ function compactRingLabel(ring = {}) {
 
 function ringDisplayValue(ring = {}) {
   if (ring.infinite) return '∞';
+  if (typeof ring.used === 'string' && ring.used.startsWith('余 ')) return ring.used;
   if (ring.used === '待统计' || ring.used === '—') return ring.used;
   const pct = finiteNumber(ring.pct);
   if (pct !== null) return `${Math.round(pct)}%`;

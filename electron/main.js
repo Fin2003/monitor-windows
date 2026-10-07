@@ -12,7 +12,7 @@ const VolcengineProvider = require('./providers/VolcengineProvider');
 const XfyunProvider = require('./providers/XfyunProvider');
 const OpencodeGoProvider = require('./providers/OpencodeGoProvider');
 const CodingPlanApiProvider = require('./providers/CodingPlanApiProvider');
-const API_PROVIDER_CLASSES = Object.fromEntries(['kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].map(type => [type, class extends CodingPlanApiProvider { constructor() { super(type); } }]));
+const API_PROVIDER_CLASSES = Object.fromEntries(Object.keys(require('./providers/coding-plan-api').TYPES).filter(type => !['volcengine', 'opencodego'].includes(type)).map(type => [type, class extends CodingPlanApiProvider { constructor() { super(type); } }]));
 const { SystemMonitorClient } = require('./system-monitor-client');
 const SystemMonitorRuntime = require('./system-monitor-runtime');
 const TiboRadar = require('../plugins/tibo-radar/runtime.cjs');
@@ -710,6 +710,10 @@ function setupIPC() {
     providerManager.setProxyPort(providerId, port);
     return true;
   });
+
+  ipcMain.handle('import-provider-auth', (_event, id) => require('./providers/quota-auth').importCliAuth(providerManager.getProvider(id)));
+  ipcMain.handle('begin-copilot-login', (_event, id) => require('./providers/copilot-login').begin(providerManager.getProvider(id)));
+  ipcMain.handle('poll-copilot-login', (_event, id) => require('./providers/copilot-login').poll(providerManager.getProvider(id)));
 
   ipcMain.handle('get-provider-config', (_event, providerId) => {
     return providerManager.getProviderConfig(providerId);

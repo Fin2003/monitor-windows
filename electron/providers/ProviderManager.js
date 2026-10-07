@@ -488,8 +488,10 @@ class ProviderManager {
   setProviderConfig(providerId, config) {
     if (!this.#configStore) return;
     const provider = this.#providers.get(providerId);
-    const { apiKey, accessKeyId, secretAccessKey, ...metadata } = config;
-    if (apiKey || accessKeyId || secretAccessKey) provider.authStore.write(providerId, { apiKey, accessKeyId, secretAccessKey });
+    const { AUTH_FIELDS } = require('./CodingPlanAuthStore');
+    const metadata = Object.fromEntries(Object.entries(config).filter(([key]) => !AUTH_FIELDS.includes(key) && !key.startsWith('has')));
+    const secrets = Object.fromEntries(AUTH_FIELDS.filter(key => config[key]).map(key => [key, config[key]]));
+    if (Object.keys(secrets).length) provider.authStore.write(providerId, secrets);
     const all = this.#configStore.get('providerConfig') || {};
     all[providerId] = { ...all[providerId], ...metadata };
     this.#configStore.set('providerConfig', all);
@@ -909,7 +911,10 @@ class ProviderManager {
     const offset = result.channelOffset || 0;
     let pctIdx = 0;
     for (const p of result.plans) {
-      if (p.percentage != null) {
+      if (result.dynamicQuota && p.percentage == null) {
+        values.push({ type: 'balance', pct: 0, remaining: p.remaining, used: p.used, total: p.total });
+        isInfinite.push(!!p.unlimited);
+      } else if (p.percentage != null) {
         if (type === 'volcengine') {
           const isAgent = channelKey.endsWith(':agent');
           const planIsAgent = p.name.includes('Agent');
@@ -963,7 +968,7 @@ class ProviderManager {
       allCountdowns[offset + i] = resultCountdowns[i];
     }
 
-    const data = { plans: allPlans, countdowns: allCountdowns, url: result.url || cached.url || '', source: result.source || cached.source, _fetchTime: Date.now() };
+    const data = { ...result, plans: allPlans, countdowns: allCountdowns, url: result.url || cached.url || '', source: result.source || cached.source, _fetchTime: Date.now() };
     cache[providerId] = { data, timestamp: Date.now() };
     if (this.#configStore) {
       try { this.#configStore.set('providerCache', cache); } catch(_) {}
