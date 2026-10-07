@@ -68,3 +68,14 @@ derivatives use the internal name Monitor Sans SC. Original font copyrights and
 the OFL text are preserved in firmware/fonts/LICENSE and licenses. Rebuild with
 scripts/prepare-ui-fonts.py and scripts/generate-ui-fonts.cjs; the generated C
 glyph data is shipped in the firmware source. https://github.com/google/fonts/tree/main/ofl/notosanssc
+
+## Coding Plan query sources
+
+The API-key and AK/SK query logic in electron/providers/coding-plan-api.js is adapted
+from CC Switch coding_plan.rs at d35726e28695844deaf0098450b34911f5be7b78.
+Copyright (c) 2025 Jason Young; MIT. https://github.com/farion1231/cc-switch
+The web-session endpoints and OpenCode serialized usage parsing are adapted from
+QuotaRadar at d8d020b0dd4055c5c3defc8dc7b404fc9a132fbc (MIT). https://github.com/Asklear/QuotaRadar
+Both full license texts are retained in licenses and packaged with the application.
+This is an independent JavaScript adaptation; CC Switch is not a runtime dependency.
+XFYun uses QuotaRadar's web-session endpoint, since CC Switch has no XFYun adapter.

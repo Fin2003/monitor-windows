@@ -121,7 +121,7 @@
         sensors = cached?.data?.sensors || [];
         aliases = hardware.sensorAliases || {};
         selectedSensorIds = hardware.selectedSensors || [];
-        const names = { volcengine: '火山方舟', xfyun: '讯飞星火', opencodego: 'OpenCode Go' };
+        const names = { kimi: 'Kimi Coding', zhipu: '智谱 GLM', minimax: 'MiniMax', zenmux: 'ZenMux', commandcode: 'Command Code', volcengine: '火山方舟', xfyun: '讯飞星火', opencodego: 'OpenCode Go' };
         const candidates = new Map();
         for (const account of config.channelAccounts || []) {
           if (account.enabled === false || !names[account.type]) continue;
