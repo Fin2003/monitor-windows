@@ -665,18 +665,12 @@ function setupIPC() {
     configStore.set('countdownCache', cache);
   });
 
-  ipcMain.handle('append-xfyun-log', (_event, text) => {
-    const logPath = path.join(app.getPath('userData'), '讯飞周流控实际额度更新时间.txt');
-    try { fs.appendFileSync(logPath, text + '\n'); } catch (_) {}
-  });
-
   ipcMain.handle('provider-check-auth', (_event, providerId) => {
     return providerManager.checkAuth(providerId);
   });
 
   ipcMain.handle('provider-login', (_event, providerId) => {
-    const creds = (configStore.get('providerCredentials') || {})[providerId] || null;
-    return providerManager.login(providerId, creds);
+    return providerManager.login(providerId);
   });
 
   ipcMain.handle('provider-logout', (_event, providerId) => {

@@ -8,7 +8,7 @@ class XfyunProvider extends BaseProvider {
   isDirectAuth() { return false; }
   hydrateCatalog(data) { if (data?.plans) { this.availablePlans = data.plans.map(p => ({ name: p.name, status: p.status, dateRange: p.dateRange })); this.catalogStatus = 'cached'; } }
   async checkAuth() {
-    try { await this.fetchData(); this.status = 'connected'; return { status: 'connected' }; }
+    try { const data = await this.fetchData(); this.status = 'connected'; return { status: 'connected', data }; }
     catch (error) { this.lastError = error.message; this.status = error.kind === 'auth' ? 'unauthorized' : 'error'; return { status: this.status, error: error.message }; }
   }
   async fetchData() {
