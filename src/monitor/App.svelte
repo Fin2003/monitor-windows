@@ -39,10 +39,7 @@
       if (!providerData[id]) continue;
       if (getProviderType(key) === 'volcengine') calibrateVolcengineCountdown(key);
       else if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(getProviderType(key))) calibrateSimpleCountdown(key, id);
-      else if (getProviderType(key) === 'xfyun') {
-        const plan = providerData[id].plans?.find(p => p.name === '讯飞星火 ' + key.split(':').slice(1).join(':'));
-        if (plan) initXfyunCountdown(key, plan);
-      }
+
     }
   }
   let currentTheme = $state('dark');
@@ -208,10 +205,6 @@
       const type = accountId.split('_')[0];
       if (type === 'volcengine' && providerData[accountId]) {
         calibrateVolcengineCountdown(key);
-      } else if (type === 'xfyun' && providerData[accountId]) {
-        const planName = key.split(':').slice(1).join(':');
-        const plan = providerData[accountId].plans?.find(p => p.name === `讯飞星火 ${planName}`);
-        if (plan) initXfyunCountdown(key, plan);
       } else if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type) && providerData[accountId]) {
         calibrateSimpleCountdown(key, accountId);
       }
@@ -277,10 +270,6 @@
           }
           if (type === 'volcengine' && providerData[accountId]) {
             calibrateVolcengineCountdown(key);
-          } else if (type === 'xfyun' && providerData[accountId]) {
-            const planName = key.split(':').slice(1).join(':');
-            const plan = providerData[accountId].plans?.find(p => p.name === `讯飞星火 ${planName}`);
-            if (plan) initXfyunCountdown(key, plan);
           } else if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type) && providerData[accountId]) {
             calibrateSimpleCountdown(key, accountId);
           }
@@ -356,28 +345,11 @@
         }
         if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type)) {
           for (const key of trackedChannels) {
-            if (getProviderType(key) === 'opencodego' && key.split(':')[0] === providerId) {
+            if (getProviderType(key) === type && key.split(':')[0] === providerId) {
               calibrateSimpleCountdown(key, providerId);
             }
           }
         }
-        if (type === 'xfyun') {
-          for (const key of trackedChannels) {
-            if (getProviderType(key) === 'xfyun' && key.split(':')[0] === providerId) {
-              const planName = key.split(':').slice(1).join(':');
-              const plan = data.plans?.find(p => p.name === `讯飞星火 ${planName}`);
-              if (plan) {
-                const ck = getCountdownKey(key, PERIODS[0].key);
-                if (!countdownState[ck]) {
-                  initXfyunCountdown(key, plan);
-                } else {
-                  calibrateXfyunCountdown(key, plan);
-                }
-              }
-            }
-          }
-        }
-
         for (const key of trackedChannels) {
           if (key.split(':')[0] !== providerId) continue;
           const st = autoRefreshState[key];
@@ -436,84 +408,10 @@
     }, 1000);
   }
 
-  const UTC8_OFFSET = 8 * 3600 * 1000;
-  const HOUR_MS = 3600 * 1000;
-  const DAY_MS = 24 * HOUR_MS;
-
-  function computeXfyunRefreshTarget(periodIndex, dateStart, dateEnd) {
-    const utc8Now = Date.now() + UTC8_OFFSET;
-    if (periodIndex === 0) {
-      const utc8Start = dateStart + UTC8_OFFSET;
-      const firstWholeHour = Math.ceil(utc8Start / HOUR_MS) * HOUR_MS;
-      const periodMs = 5 * HOUR_MS;
-      const elapsed = utc8Now - firstWholeHour;
-      if (elapsed < 0) return firstWholeHour - UTC8_OFFSET;
-      const cycles = Math.floor(elapsed / periodMs);
-      return firstWholeHour + (cycles + 1) * periodMs - UTC8_OFFSET;
-    } else if (periodIndex === 1) {
-      const utc8Start = dateStart + UTC8_OFFSET;
-      const dayStart = Math.floor(utc8Start / DAY_MS) * DAY_MS;
-      let firstEightAM = dayStart + 8 * HOUR_MS;
-      if (firstEightAM <= utc8Start) firstEightAM += DAY_MS;
-      const periodMs = 7 * DAY_MS;
-      const elapsed = utc8Now - firstEightAM;
-      if (elapsed < 0) return firstEightAM - UTC8_OFFSET;
-      const cycles = Math.floor(elapsed / periodMs);
-      return firstEightAM + (cycles + 1) * periodMs - UTC8_OFFSET;
-    } else {
-      return dateEnd || (dateStart + 31 * DAY_MS);
-    }
-  }
-
   let countdownState = $state({});
 
   function getCountdownKey(channelKey, periodKey) {
     return channelKey + ':' + periodKey;
-  }
-
-  function initXfyunCountdown(channelKey, plan) {
-    const colonIdx = channelKey.indexOf(':');
-    const planName = colonIdx >= 0 ? channelKey.slice(colonIdx + 1) : '';
-    if (planName.replace(/_\d+$/, '') === '无忧版') return;
-
-    for (let i = 0; i < PERIODS.length; i++) {
-      const key = getCountdownKey(channelKey, PERIODS[i].key);
-      const pd = plan.periods.find(pp => pp.label === PERIODS[i].xfyunName);
-      const used = pd && pd.usage && pd.usage.length > 0 ? parseFloat(pd.usage[0].used) : 0;
-      countdownState[key] = { prevUsed: used };
-    }
-  }
-
-  function calibrateXfyunCountdown(channelKey, plan) {
-    const colonIdx = channelKey.indexOf(':');
-    const planName = colonIdx >= 0 ? channelKey.slice(colonIdx + 1) : '';
-    if (planName.replace(/_\d+$/, '') === '无忧版') return;
-
-    for (let i = 0; i < PERIODS.length; i++) {
-      const period = PERIODS[i];
-      const pd = plan.periods.find(pp => pp.label === period.xfyunName);
-      if (!pd || !pd.usage || pd.usage.length === 0) continue;
-
-      const key = getCountdownKey(channelKey, period.key);
-      const st = countdownState[key];
-      const used = parseFloat(pd.usage[0].used);
-
-      if (!st) continue;
-
-      if (used < st.prevUsed) {
-        if (i === 1) {
-          const now = new Date();
-          const beijing = new Date(now.getTime() + 8 * 3600 * 1000);
-          const ts = beijing.toISOString().replace('T', ' ').replace('Z', '');
-          const minsSinceMidnight = beijing.getUTCHours() * 60 + beijing.getUTCMinutes();
-          const offset = Math.abs(minsSinceMidnight - 480);
-          const mark = offset <= 5 ? '  *** 08:00刷新确认' : '  ??? 偏离08:00';
-          window.api.appendXfyunLog(`[${ts} UTC+8] 套餐=${planName} 周额度变化  prevUsed=${st.prevUsed} -> used=${used}${mark}`);
-        }
-      }
-
-      countdownState[key] = { ...st, prevUsed: used };
-    }
   }
 
   function calibrateVolcengineCountdown(channelKey) {
@@ -584,21 +482,19 @@
     const accountId = channelKey.includes(':') ? channelKey.split(':')[0] : channelKey;
     if (type === 'xfyun') {
       const planName = channelKey.split(':').slice(1).join(':');
-      const basePlanName = planName.replace(/_\d+$/, '');
+
       const plans = providerData[accountId]?.plans || [];
       const plan = plans.find(p => p.name === `讯飞星火 ${planName}`);
       if (!plan || !plan.periods) return [];
-      const isInfinite = basePlanName === '无忧版';
-      const planDateStart = plan.dateRange?.start ? new Date(plan.dateRange.start).getTime() : null;
-      const planDateEnd = plan.dateRange?.end ? new Date(plan.dateRange.end).getTime() : null;
+
       return PERIODS.map((period, i) => {
         const pd = plan.periods.find(pp => pp.label === period.xfyunName);
         if (pd && pd.usage && pd.usage.length > 0) {
           const u = pd.usage[0];
           const used = parseFloat(u.used);
-          const refreshTargetMs = planDateStart ? computeXfyunRefreshTarget(i, planDateStart, planDateEnd) : null;
+          const refreshTargetMs = pd.resetsAt ? Date.parse(pd.resetsAt) : null;
           const countdownMs = refreshTargetMs ? refreshTargetMs - countdownNow : null;
-          if (isInfinite || u.total === '∞') {
+          if (u.total === '∞') {
             return { key: period.key, label: period.label, pct: 100, color: ringColors[i], used: Math.round(used), total: '∞', infinite: true, countdownMs: null };
           }
           const total = parseFloat(u.total);
