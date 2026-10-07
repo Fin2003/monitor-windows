@@ -1,97 +1,114 @@
-# Monitor ESP32 — Windows
+# Monitor ESP32
 
-## Windows EXE release
+**中文** · [English](README.en.md)
 
-Download `Monitor-ESP32-1.1.4-Setup-x64.exe` from this repository's Releases and double-click it. It installs the application and shortcuts, then starts the app. Electron, the Windows hardware engine's .NET runtime and native serial libraries are included; Node.js, npm and .NET do not need to be installed on the destination computer. Windows x64 is required. The package is unsigned.
+Windows 主机连接 ESP32 触摸显示屏，展示 AI 额度、硬件数据和 Tibo 雷达，并提供鼠标触屏预览。
 
-The board is discovered over USB automatically. Select a port if multiple ESP32 devices are attached. The EXE uses a separate `%APPDATA%/monitor-esp32` profile; sign in and configure your own keys after installation. Optional light protocol identifiers are stored in that profile's `lights-connection.json` file. Installing the EXE does not flash the board; the host and firmware must come from this branch together.
+[下载安装](https://github.com/Fin2003/monitor-windows/releases/latest) · [Windows 版本](https://github.com/Fin2003/monitor-windows/tree/main) · [ESP32 版本](https://github.com/Fin2003/monitor-windows/tree/esp32) · [插件开发](docs/plugins.md)
 
-To reproduce the installer from source, run `install-dependencies.bat`, then `npm run dist:win`. The installer is written to `release/`. Hardware sensor access may request UAC when the hardware plugin starts.
+## 启动
 
+### 方式一：下载 EXE，直接安装使用
 
-Windows host + Waveshare ESP32-S3-Touch-LCD-5B (1024 × 600) touchscreen firmware. This branch includes quota and balance displays for 21 public provider types, custom quota queries, system sensors, Tibo Radar and optional BLE light control.
+**普通用户直接去 [发布页](https://github.com/Fin2003/monitor-windows/releases/latest) 下载安装包，不需要先下载源码或安装开发环境。**
 
-## One-click start
+| 使用场景 | 下载文件 |
+| --- | --- |
+| Windows 显示器／副屏 | `Monitor-Windows-版本号-Setup-x64.exe` |
+| Windows 连接 ESP32 屏幕 | `Monitor-ESP32-版本号-Setup-x64.exe` |
 
-Unzip to a writable folder and double-click `start.bat`. First launch invokes `install-dependencies.bat` to install Node.js and .NET SDK through winget when needed, restore locked dependencies, build the hardware engine and build the interface. You can run the installer separately. Windows App Installer provides winget; Windows x64 is required for this build.
+双击安装包即可安装并创建快捷方式。安装包内置 Electron、.NET 和必要运行依赖；ESP32 版还包含串口库与触屏预览引擎。**无需另装 Node.js、npm 或 .NET。** 支持 Windows 10／11 x64；首次使用硬件监控时可能需要确认管理员权限。当前安装包尚未进行代码签名。
 
-Connect the board USB port and start the app. A unique Espressif USB Serial/JTAG device is selected automatically by its generic USB descriptor, then confirmed by the board's firmware hello packet. Multiple candidates appear in the ESP32 settings selector. No fixed COM number, USB serial number, machine path or personal device address is stored in the source. Opening a serial connection may reset the board depending on the Windows driver.
+首次启动后，在管理页配置自己的账号、密钥和显示内容。账号登录不是使用其他无登录插件的前提。
 
-The source starts with an empty `.device-profile` directory created locally at runtime. The installed EXE stores its own profile in `%APPDATA%/monitor-esp32` instead. Configure accounts and Radar LLM/JEV keys in this app's manager. It never imports another Monitor installation's credentials. `.gitignore` excludes all sessions, cookies, keys, device profiles, screenshots, logs, generated binaries and toolchains.
+### 方式二：源码／脚本一键启动
 
-`start.bat --esp32-no-connect` runs without opening USB. `--esp32-passive` disables live account and sensor collection. `--esp32-port=COMn` overrides automatic USB selection. `npm run bridge` launches this same host runtime.
+下载对应分支的源码 ZIP 并解压到可写目录，双击 **`start.bat`**。首次运行会自动调用依赖安装脚本并构建界面与硬件引擎。也可先运行 **`install-dependencies.bat`**，再启动。
 
-## Firmware build
+源码安装需要联网及 Windows 应用安装程序提供的 `winget`。脚本会按需安装 Node.js 和 .NET 8 SDK；Node.js 最低版本为 22.12.0。ESP32 源码预览还需要 CMake、Ninja 与 MSYS2 UCRT64 GCC，依赖脚本会准备这些工具。缺少 `winget` 时，可先自行安装相应开发工具。
 
-The firmware requires ESP-IDF 5.5.1 for ESP32-S3. Use the ESP-IDF PowerShell environment and run `npm run build:esp32`, or set `IDF_PATH`, `IDF_TOOLS_PATH` and `IDF_PYTHON_ENV_PATH` to your installed toolchain. The desktop dependency installer does not install or flash ESP-IDF.
+```bat
+install-dependencies.bat
+start.bat
+```
 
-Generated UI fonts are included so an ordinary firmware build does not require font generation. To regenerate them, run `python -m pip install fonttools`, `python scripts/prepare-ui-fonts.py`, then `node scripts/generate-ui-fonts.cjs` to use the OFL-licensed Noto Sans SC source.
+`start-clean.bat` 使用独立的空白配置目录，适合查看首次启动状态。普通源码配置位于本目录 `.device-profile`，空白启动位于 `.review-profile`；安装版使用 `%APPDATA%\monitor-esp32`。这些目录保存你随后设置的内容，均不进入 Git 或发布包。
 
-Use the host and firmware from this same branch together: the Coding Plan display payload now carries generic channel periods. The dependency installer does not update firmware already installed on a board.
+### 已实测连接的 ESP32 显示屏
 
-The build script preserves the 4.5 MiB app image limit required for the RGB framebuffers and PSRAM. It only compiles firmware; it does not flash the board. Flash manually using ESP-IDF after selecting your own port. Physical display, touch and BLE behavior require validation on the intended board.
+| 项目 | 当前适配 |
+| --- | --- |
+| 板卡型号 | **Waveshare ESP32-S3-Touch-LCD-5B** |
+| 屏幕 | 5 英寸电容触摸，**1024×600** |
+| 控制器 | ESP32-S3，RGB 显示接口，GT911 触摸控制器 |
+| 主机连接 | USB 数据线，Espressif USB Serial/JTAG |
+| 主机系统 | Windows 10／11 x64 |
+| 固件开发 | ESP-IDF 5.5.1、LVGL |
 
-## 触屏预览
+已有设备验证了 USB 连接和显示。型号中的 **5B** 对应本项目的 1024×600 配置；同系列 800×480 型号需要调整固件，不能直接视为已验证兼容。规格、接口位置与接线请参阅 [Waveshare 官方文档](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-5)。
 
-“ESP32 屏幕”页内置 1024×600 预览，复用与设备相同的 LVGL 固件源码和字体。鼠标点击模拟轻触，按住拖动模拟滑动；无需 USB 连接即可预览。管理页不再提供 Windows 显示器选择、分辨率或桌面全屏控制，主题在标题栏切换。
+连接带数据传输能力的 USB 线后启动程序。唯一符合条件的设备自动识别；多设备时在“ESP32 屏幕”页选择端口。没有预设个人串口号或设备序列号。深色／亮色模式在标题栏切换，屏幕预览支持鼠标点击与按住拖动。
 
-源码预览的构建需要 CMake、Ninja 和 MSYS2 UCRT64 GCC，由 `install-dependencies.bat` 准备；EXE 内置预览引擎，无需另装这些开发工具。独立浏览器编辑器已移除，桌面应用不再监听该 HTTP 编辑端口。
+安装主机 EXE **不会给板卡刷写固件**。板卡需运行同一版本的 Monitor 固件；如需编译，在 ESP-IDF 环境运行 `npm run build:esp32`，再按官方工具流程自行刷写。源码预览使用 `npm run build:preview`；普通 EXE 已内置预览引擎。
 
-## Optional lights
+## 插件开发与插件市场
 
-No pairing identifiers are supplied. See `plugins/light-control/README.md` to configure your own local light protocol parameters. USB device discovery is automatic; light pairing tokens cannot be inferred from the USB descriptor.
+管理页 → **插件管理 → 插件市场**，可搜索、查看作者源码、安装／更新插件，或安装本地 ZIP。插件需要账号时，安装后在 Coding Plan 管理中填写自己的凭据。额度插件也会用于 ESP32 的现有额度页面。
 
-## 开源协议与致谢
+| 类型 | 适用版本 | 开发方式 |
+| --- | --- | --- |
+| 显示插件 | Windows | `manifest.json` 与 `index.html`，可带静态资源 |
+| 额度查询插件 | Windows、ESP32 | `manifest.json`、`quota.json` 与兼容 CC Switch 的 `query.js` |
+| ESP32 原生页面 | ESP32 | 修改 LVGL 固件和主机协议，提交代码 PR |
 
-本项目原始代码采用 [ISC 协议](LICENSE)。感谢 **LibreHardwareMonitor**、**lfreist/hwinfo**、**CapFrameX**、**PawnIO / PawnIO.Modules** 提供系统监控实现与参考。
+市场索引在 `main` 分支的 [marketplace/index.json](https://github.com/Fin2003/monitor-windows/blob/main/marketplace/index.json)。两种主机读取同一索引并显示兼容范围；“市场来源”可切换到社区维护的 HTTPS 索引。
 
-第三方组件保留原有许可证；完整版权、许可证文本、版本和源码取得方式见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。安装包带有许可证目录，Release 同时提供应用源码和第三方源码包。1.0.2 的实验性 PawnIO 驱动仅提供源码，安装包不附该实验驱动；部分新显卡的额外温度读数需要自行构建驱动。
+作者把插件维护在自己的公开仓库，ZIP 放在自己的发布页；本仓库仅收录名称、版本、兼容范围、源码链接、下载链接和 SHA256。**任何人都可以派生仓库并提交 PR 上架／更新自己的插件**；合并后应用刷新市场即可看到，新增插件不需要重新发布 Monitor。未收录的插件也可以通过本地 ZIP 安装。
 
-## 独立启动与发布内容
+查看 [中文开发与投稿文档](docs/plugins.md) 和 [示例插件](examples/plugins)。投稿不携带个人 Key、Cookie、配置、依赖目录或编译工具链。显示插件在隔离的页面中运行；额度脚本复用现有 QuickJS 查询环境，不能直接调用 Node.js 文件或进程接口。
 
-双击 `start-clean.bat` 使用本目录的 `.review-profile`，便于检查首次启动状态；该目录首次运行时创建，不读取其他安装的配置。普通 `start.bat` 使用本目录的 `.device-profile`。两种入口都会保存你随后自行设置的内容，可在这些目录检查。安装版的配置目录保持独立。
+## 功能说明
 
-Git 仅保存应用源码、构建脚本、依赖版本锁和必要的第三方源码及许可证。`node_modules`、工具链、构建产物、账号配置、Cookie、设备连接信息、硬件缓存和诊断报告不会提交。EXE 内的 Electron、.NET 与串口运行库是运行所需组件；安装包不附开发依赖或预置账号数据。源码 ZIP 从对应分支的 Git 文件生成。
+### 额度与余额
 
-系统监控的 `third-party/hwinfo` 是 Linux 后端构建所需的 MIT 源码；ESP32 的字体 C 文件是固件构建输入。第三方许可证、字体源码和版本锁均保留。
+支持 21 类公开渠道，以及社区／自定义额度接口：
 
+| 类别 | 支持渠道 |
+| --- | --- |
+| 编程套餐 | 火山方舟、OpenCode Go、讯飞星火、Kimi、智谱个人／团队、MiniMax、ZenMux、Command Code |
+| 官方订阅 | Claude、Codex、Gemini、Grok／xAI、GitHub Copilot |
+| 账户余额 | DeepSeek、阶跃星辰、硅基流动、OpenRouter、Novita |
+| 通用扩展 | New API／One API、自定义接口、社区额度查询插件 |
 
-## Coding Plan 接口查询
+按接口实际返回显示周期、模型额度、账户余额、单位、重置时间及更新时间。没有总额的余额显示数值，不生成虚假百分比；ESP32 的多账号／多组额度每 15 秒轮换。
 
-Key / AKSK 认证与用量解析改编自 [CC Switch](https://github.com/farion1231/cc-switch)，支持火山 Coding / Agent Plan、OpenCode Go、Kimi、智谱国内 / 国际版、MiniMax 国内 / 国际版、ZenMux、Command Code。火山和 OpenCode 可选择已有网页登录会话；讯飞使用 [QuotaRadar](https://github.com/Asklear/QuotaRadar) 的会话接口。插件页与查询设置均标明来源，完整 MIT 许可证随安装包提供。
+官方订阅可主动选择本机 CLI 登录文件，Copilot 支持设备码登录。火山可使用 AK／SK 或已有网页登录会话；讯飞使用登录会话接口。密钥通过 Windows 系统加密保存，Cookie 留在各账号本地会话中，安装包不预置账号。已进行已有账号与真实接口调试；未宣称所有渠道都用真实订阅账号逐一验证。
 
-在账号的“接口查询”里输入自己的凭据，然后点“保存并验证”。Key 使用 Windows 系统加密，仅保存在该安装的本地配置目录，界面只回显是否已保存。火山需要账号级 AK/SK 和 Ark 用量权限；ZenMux 需要 Management API Key。认证失效、无订阅与网络 / 代理失败会显示具体原因。发布包不预置凭据、登录会话或 Workspace。
+### 系统监控、雷达与总览
 
-## Star History
+- 系统监控：CPU、GPU、内存及其他可用硬件传感器，可选择传感器与别名；部分数据需要管理员权限或硬件驱动支持。
+- Tibo 雷达：查看相关公开动态、额度重置线索和时间信息；在设置中填自己的 LLM／JEV 凭据，需要 X 会话的功能由用户自行登录。
+- 缩略总览：组合额度、硬件数据和雷达。Windows 支持页面轮换；ESP32 使用固定固件页面与深浅主题。
 
-Updated daily by GitHub Actions, including in this private repository. No personal token configuration is needed.
+### 构建安装包
+
+```bat
+npm run dist:win
+```
+
+在完成源码依赖安装后执行，输出位于 `release`。EXE、依赖目录、编译产物、账号配置、设备连接信息、缓存和诊断报告均不提交到 Git；版本锁、必要固件字体、构建输入和许可证保留。默认不开启开机自启，相关说明见 [启动文档](docs/startup.md)。
+
+## 开源协议与感谢
+
+项目原创代码采用 [ISC 协议](LICENSE)，第三方组件遵循各自的许可证。完整版权、版本、源码取得方式和许可证文本见 [第三方声明](THIRD_PARTY_NOTICES.md) 及 [许可证目录](licenses)。发布页提供应用源码及必要的第三方源码／许可证附件。
+
+感谢 [CC Switch](https://github.com/farion1231/cc-switch)、[QuotaRadar](https://github.com/Asklear/QuotaRadar)、[CodexBar](https://github.com/steipete/CodexBar)、[LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)、[hwinfo](https://github.com/lfreist/hwinfo)、[CapFrameX](https://github.com/DevTechProfile/CapFrameX)、[PawnIO](https://github.com/namazso/PawnIO)、[Waveshare](https://github.com/waveshareteam)、[LVGL](https://github.com/lvgl/lvgl)、[QuickJS](https://github.com/justjake/quickjs-emscripten) 等项目提供实现、接口适配、硬件驱动与显示支持。插件分发流程参考 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) 和 [Raycast](https://developers.raycast.com/basics/publish-an-extension)。
+
+## Star 趋势
+
+由 [GH Star History for Actions](https://github.com/kernalix7/GH-Star-History-for-Actions) 自动更新。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/star-history/chart-dark.svg">
-  <img alt="Star History" src="docs/star-history/chart.svg" width="900">
+  <img alt="Star 趋势" src="docs/star-history/chart.svg" width="900">
 </picture>
-
-Generated with [GH Star History for Actions](https://github.com/kernalix7/GH-Star-History-for-Actions).
-
-## 额度与余额渠道
-
-渠道管理支持 21 类公开渠道：火山、OpenCode Go、讯飞、Kimi、智谱个人/团队、
-MiniMax、ZenMux、Command Code；Claude、Codex、Gemini、Grok/xAI 官方订阅与
-GitHub Copilot；DeepSeek、StepFun、SiliconFlow、OpenRouter、Novita 余额；
-New API/One API 和兼容 CC Switch 的自定义查询脚本。
-
-官方订阅使用用户主动选择的 CLI 登录文件或 OAuth Token；Copilot 支持设备码登录。
-API Key、Token、组织/项目 ID、选中的文件路径及自定义脚本使用 Windows 系统加密，
-只保存在此安装的本地配置目录。发布包不附带账号、登录文件或个人脚本。
-Gemini 自动刷新 OAuth；其他 CLI 文件由各自 CLI 更新登录后，Monitor 自动读入新值。
-
-额度管理按接口实际返回的窗口、模型、币种和次数显示全部项目；余额没有总额时显示
-实际剩余数值，不生成已用百分比。ESP32 沿用已有固件布局，多个账号/多组额度每
-15 秒轮换；无需刷写硬件。查询模式支持国内/国际版智谱、MiniMax 和 SiliconFlow。
-自定义查询使用 CC Switch 的 request/extractor 格式，支持对象或数组结果，
-QuickJS 执行环境不提供本机文件与进程接口。
-
-新增逻辑改编自 CC Switch f9db9f7056cbe7f972cdc02644722002316866b9；
-Grok 账单解析经其引用 CodexBar。完整 MIT 许可证和来源说明随安装包提供。
-已进行构建和实际应用接口调试；没有逐个提供商的订阅凭据，不将适配器支持等同于
-所有账号实测成功。未提供可查询接口的模型预设，需使用用户自己的自定义脚本。

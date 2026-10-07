@@ -14,21 +14,21 @@ Thanks also to namazso for PawnIO and PawnIO.Modules.
 
 | Component | Version / revision | License and source |
 | --- | --- | --- |
-| LibreHardwareMonitorLib | 0.9.7-pre705 / 9837983c1d5d05b1222f3f12af3967f723ea65f4 | MPL-2.0 · https://github.com/LibreHardwareMonitor/LibreHardwareMonitor |
-| hwinfo | f71ee147222e9b6d31cac7c079a8a390035cb7b2 | MIT · vendored in plugins/system-monitor/engine/third-party/hwinfo |
-| CapFrameX NvidiaThermal | f2bd8948697d272440ba4e7aa7e725d9fb464a2c | MIT · https://github.com/CXWorld/CapFrameX |
-| PawnIO | 2.2.0 source / 9d52965895588b0ffa3703b72eec75ba19f4ccc0 | GPL-2.0-or-later with upstream IOCTL linking exception · https://github.com/namazso/PawnIO |
-| PawnIO.Modules NVIDIA | 0a65f31fb914914b96d175d3e461eb4824ec277a | LGPL-2.1-or-later · https://github.com/namazso/PawnIO.Modules |
-| BlackSharp.Core | 1.1.0 | MPL-2.0 · https://github.com/Blacktempel/BlackSharp |
-| DiskInfoToolkit | 2.1.1 | MPL-2.0 · https://github.com/Blacktempel/DiskInfoToolkit |
-| RAMSPDToolkit-NDD | 1.5.0 | MPL-2.0 · https://github.com/Blacktempel/RAMSPDToolkit |
-| HidSharp | 2.6.4 | Apache-2.0 · https://software.seekye.com/hidsharp |
-| Mono.Posix.NETStandard | 1.0.0 | Mono's component notices · https://github.com/mono/mono |
-| .NET runtime | 8.0.20; System.* packages 10.0.9 | MIT and bundled third-party notices · https://github.com/dotnet/runtime |
+| LibreHardwareMonitorLib | 0.9.7-pre705 / 9837983c1d5d05b1222f3f12af3967f723ea65f4 | MPL-2.0 路 https://github.com/LibreHardwareMonitor/LibreHardwareMonitor |
+| hwinfo | f71ee147222e9b6d31cac7c079a8a390035cb7b2 | MIT 路 vendored in plugins/system-monitor/engine/third-party/hwinfo |
+| CapFrameX NvidiaThermal | f2bd8948697d272440ba4e7aa7e725d9fb464a2c | MIT 路 https://github.com/CXWorld/CapFrameX |
+| PawnIO | 2.2.0 source / 9d52965895588b0ffa3703b72eec75ba19f4ccc0 | GPL-2.0-or-later with upstream IOCTL linking exception 路 https://github.com/namazso/PawnIO |
+| PawnIO.Modules NVIDIA | 0a65f31fb914914b96d175d3e461eb4824ec277a | LGPL-2.1-or-later 路 https://github.com/namazso/PawnIO.Modules |
+| BlackSharp.Core | 1.1.0 | MPL-2.0 路 https://github.com/Blacktempel/BlackSharp |
+| DiskInfoToolkit | 2.1.1 | MPL-2.0 路 https://github.com/Blacktempel/DiskInfoToolkit |
+| RAMSPDToolkit-NDD | 1.5.0 | MPL-2.0 路 https://github.com/Blacktempel/RAMSPDToolkit |
+| HidSharp | 2.6.4 | Apache-2.0 路 https://software.seekye.com/hidsharp |
+| Mono.Posix.NETStandard | 1.0.0 | Mono's component notices 路 https://github.com/mono/mono |
+| .NET runtime | 8.0.20; System.* packages 10.0.9 | MIT and bundled third-party notices 路 https://github.com/dotnet/runtime |
 
 The MPL libraries are consumed without changes. Their source and the GPL/LGPL
 driver/module source, including build information and the PawnPP source, are
-provided as `Monitor-1.0.5-third-party-sources.zip` in the same GitHub Release as
+provided as `Monitor-1.1.1-third-party-sources.zip` in the same GitHub Release as
 the executable installers. Monitor application source is also supplied there
 for both variants. Source links and package revisions are recorded in
 `licenses/SOURCE-MANIFEST.json`. Recipients can use the source under each
@@ -69,20 +69,6 @@ the OFL text are preserved in firmware/fonts/LICENSE and licenses. Rebuild with
 scripts/prepare-ui-fonts.py and scripts/generate-ui-fonts.cjs; the generated C
 glyph data is shipped in the firmware source. https://github.com/google/fonts/tree/main/ofl/notosanssc
 
-## Native touchscreen preview
-
-The Windows preview uses LVGL 8.4.0 (revision 4495f428630cc1741bd8bfd977f080e8460e8e8d)
-under MIT and cJSON 1.7.19 (revision c859b25da02955fef659d658b8f324b5cde87be3)
-under MIT. Their unchanged sources are included in the third-party source archive.
-The desktop adapter and build scripts are included in the ESP32 application source.
-
-MonitorEsp32Preview is compiled with MSYS2 UCRT64 GCC 15.1.0 and statically links
-the MinGW-w64 CRT (13.0.0.r21.gf5469ff36) and GCC support runtime. MinGW-w64 copyright
-and component notices, GPL texts, and GCC Runtime Library Exception 3.1 are retained
-in licenses. The exception permits this compiled combination to be distributed
-under the licenses of its independent modules. No libstdc++, libquadmath or
-compiler toolchain is bundled. Rebuild using scripts/build-esp32-preview.ps1.
-
 ## Coding Plan query sources
 
 The API-key and AK/SK query logic in electron/providers/coding-plan-api.js is adapted
@@ -108,3 +94,21 @@ The Gemini installed-app OAuth client identifiers are public values from
 Gemini CLI through CC Switch. They are not an account token or user secret.
 Account OAuth tokens, API keys, imported-file paths, scripts and cookies are
 created and stored on the user's machine only.
+
+## Community plugin distribution
+
+Plugin ZIP extraction uses extract-zip 2.0.1 (BSD-2-Clause), with yauzl and its
+runtime dependencies under their respective MIT / BSD licenses. Full license
+texts and exact runtime package revisions are in licenses/Marketplace-*.
+The Monitor-1.2.0-plugin-third-party-sources.zip Release attachment contains the
+published npm packages for plugin extraction and the existing QuickJS runtime,
+with their included source, WebAssembly files and license texts. The hardware
+source archive remains available in release v1.1.1. These published npm packages
+are not described as a complete build checkout of every upstream C engine.
+Upstream: https://github.com/max-mapper/extract-zip
+
+The independent plugin repository structure is informed by Miao-Yunzai and the
+catalog PR workflow by Raycast documentation. No code was copied from these
+projects for the marketplace. Community plugin authors retain their licenses.
+https://github.com/yoimiya-kokomi/Miao-Yunzai
+https://developers.raycast.com/basics/publish-an-extension

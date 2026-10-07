@@ -1,0 +1,33 @@
+name: Plugin catalog
+on:
+  pull_request:
+    paths:
+      - 'marketplace/**'
+      - 'src/shared/plugin-catalog.cjs'
+      - 'scripts/validate-plugin-catalog.cjs'
+      - 'examples/plugins/**'
+      - '.github/workflows/plugin-catalog.yml'
+  push:
+    branches: [main, esp32]
+    paths:
+      - 'marketplace/**'
+      - 'src/shared/plugin-catalog.cjs'
+      - 'scripts/validate-plugin-catalog.cjs'
+      - 'examples/plugins/**'
+      - '.github/workflows/plugin-catalog.yml'
+permissions:
+  contents: read
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate catalog metadata
+        run: node scripts/validate-plugin-catalog.cjs
+      - name: Validate example manifests without executing plugins
+        run: |
+          node scripts/validate-plugin-catalog.cjs examples/plugins/github-api-quota/manifest.json
+          node scripts/validate-plugin-catalog.cjs examples/plugins/hello-monitor/manifest.json

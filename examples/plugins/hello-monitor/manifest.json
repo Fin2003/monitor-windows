@@ -1,0 +1,16 @@
+{
+  "id": "hello-monitor",
+  "name": "示例 · 显示插件入门",
+  "description": "独立静态页面，展示插件加载状态和当前视口尺寸。",
+  "version": "1.0.0",
+  "minAppVersion": "1.2.0",
+  "kind": "display",
+  "targets": [
+    "windows"
+  ],
+  "author": "Monitor contributors",
+  "repository": "https://github.com/Fin2003/monitor-windows/tree/main/examples/plugins/hello-monitor",
+  "license": "ISC",
+  "icon": "monitor",
+  "defaultEnabled": false
+}

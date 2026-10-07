@@ -199,6 +199,22 @@ function setupIPC() {
     return true;
   });
 
+  const marketplace = new (require('./plugin-marketplace').PluginMarketplace)(configStore, pluginManager);
+  ipcMain.handle('plugin-marketplace-list', () => marketplace.list());
+  ipcMain.handle('plugin-marketplace-install', async (_event, id) => {
+    const result = await marketplace.install(id);
+    syncOverviewSources();
+    if (monitorWindow && !monitorWindow.isDestroyed()) monitorWindow.webContents.send('plugin-update', pluginManager.getPluginList());
+    return result;
+  });
+  ipcMain.handle('plugin-marketplace-local', async () => {
+    const result = await marketplace.installLocal(managerWindow);
+    if (!result.canceled) syncOverviewSources();
+    if (monitorWindow && !monitorWindow.isDestroyed()) monitorWindow.webContents.send('plugin-update', pluginManager.getPluginList());
+    return result;
+  });
+  ipcMain.handle('plugin-marketplace-source', (_event, url) => marketplace.setSource(url));
+
   ipcMain.handle('get-plugins', () => {
     return pluginManager.getPluginList();
   });

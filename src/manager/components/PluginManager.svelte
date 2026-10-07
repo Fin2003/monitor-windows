@@ -1,5 +1,7 @@
 <script>
   import Icon from '@shared/components/Icon.svelte';
+  import PluginMarketplace from './PluginMarketplace.svelte';
+  let view = $state('installed');
 
   let { onconfigchanged } = $props();
 
@@ -42,6 +44,21 @@
   }
 
   async function uninstallPlugin(id) {
+    const plugin = plugins.find(item => item.id === id);
+    if (plugin?.kind === 'quota') {
+      const id = plugin.providerId;
+      await window.api.providerLogout(id);
+      await window.api.removeChannelAccount(id);
+      const config = await window.api.getConfig();
+      await window.api.setConfig('channelAccounts', (config.channelAccounts || []).filter(account => account.id !== id));
+      for (const key of ['accountChannels', 'accountDisplayEnabled', 'providerNames', 'providerConfig', 'providerProxyPorts']) {
+        const next = {...config[key]}; delete next[id];
+        await window.api.setConfig(key, next);
+      }
+      const selections = Object.fromEntries(Object.entries(config.selectedAccounts || {}).filter(([, value]) => value !== id));
+      await window.api.setConfig('selectedAccounts', selections);
+      await window.api.setConfig('selectedProviders', (config.selectedProviders || []).filter(key => key !== id && !key.startsWith(id + ':')));
+    }
     await window.api.uninstallPlugin(id);
     onconfigchanged?.();
     await refresh();
@@ -104,7 +121,7 @@
 <div class="page">
   <div class="page-title-row">
     <h2 class="page-title">插件管理</h2>
-    <div class="switch-actions">
+    <div class="switch-actions" class:hidden={view !== 'installed'}>
       <button class="manual-switch" onclick={switchNextPage} disabled={plugins.filter(plugin => plugin.enabled).length < 2} title="切换到下一个已启用插件">
         <Icon name="carousel" size={13} /> 手动切换
       </button>
@@ -118,6 +135,13 @@
     </div>
   </div>
 
+  <div class="view-tabs" role="tablist" aria-label="插件视图">
+    <button role="tab" aria-selected={view === 'installed'} class:active={view === 'installed'} onclick={() => view = 'installed'}>已安装</button>
+    <button role="tab" aria-selected={view === 'marketplace'} class:active={view === 'marketplace'} onclick={() => view = 'marketplace'}>插件市场</button>
+  </div>
+  {#if view === 'marketplace'}
+    <PluginMarketplace onchanged={async () => { await refresh(); onconfigchanged?.(); }} />
+  {:else}
   {#if toggleError}<p role="alert">{toggleError}</p>{/if}
 
   {#if autoSwitch}
@@ -141,7 +165,7 @@
   {:else}
     <div class="plugin-list">
       {#each plugins as plugin, idx}
-        <div class="plugin-card" class:disabled={!plugin.enabled}>
+        <div class="plugin-card" class:disabled={!plugin.enabled && plugin.kind !== 'quota'}>
           <div class="plugin-header">
             <div class="plugin-icon">
               <Icon name={plugin.icon || 'dot'} size={22} />
@@ -153,19 +177,19 @@
                 {#if plugin.description}
                   · {plugin.description}
                 {/if}
-                {#if providerStatus[plugin.id]}
-                  · <span class="provider-status" class:connected={providerStatus[plugin.id] === 'connected'}
-                      class:unauthorized={providerStatus[plugin.id] === 'unauthorized'}
-                      class:error={providerStatus[plugin.id] === 'error'}>
-                    {providerStatus[plugin.id] === 'connected' ? '已登录' : providerStatus[plugin.id] === 'logging-in' ? '登录中...' : providerStatus[plugin.id] === 'error' ? '需重连' : '未登录'}
+                {#if providerStatus[plugin.providerId || plugin.id]}
+                  · <span class="provider-status" class:connected={providerStatus[plugin.providerId || plugin.id] === 'connected'}
+                      class:unauthorized={providerStatus[plugin.providerId || plugin.id] === 'unauthorized'}
+                      class:error={providerStatus[plugin.providerId || plugin.id] === 'error'}>
+                    {providerStatus[plugin.providerId || plugin.id] === 'connected' ? '已登录' : providerStatus[plugin.providerId || plugin.id] === 'logging-in' ? '登录中...' : providerStatus[plugin.providerId || plugin.id] === 'error' ? '需重连' : '未登录'}
                   </span>
                 {/if}
               </div>
             </div>
-            <label class="toggle">
+            {#if plugin.kind !== 'quota'}<label class="toggle">
               <input type="checkbox" checked={plugin.enabled} onchange={() => togglePlugin(plugin.id, !plugin.enabled)} />
               <span class="toggle-slider"></span>
-            </label>
+            </label>{:else}<span class="quota-kind">额度查询</span>{/if}
           </div>
           {#if plugin.id === 'coding-plan'}
             <div class="plugin-source-links">接口实现来源：
@@ -174,15 +198,15 @@
             </div>
           {/if}
           <div class="plugin-actions">
-            {#if providerStatus[plugin.id] === 'unauthorized'}
+            {#if plugin.kind !== 'quota' && providerStatus[plugin.providerId || plugin.id] === 'unauthorized'}
               <button class="action-btn accent" onclick={() => loginInPanel(plugin.id)}>
                 <Icon name="power" size={12} /> 登录
               </button>
             {/if}
-            <button class="action-btn" onclick={() => openPluginPanel(plugin.id)}>
+            <button class="action-btn" onclick={() => openPluginPanel(plugin.kind === 'quota' ? 'coding-plan' : plugin.id)}>
               <Icon name="monitor" size={12} /> 管理
             </button>
-            <button class="action-btn" onclick={() => switchToPage(plugin.id)} disabled={!plugin.enabled}>
+            {#if plugin.kind !== 'quota'}<button class="action-btn" onclick={() => switchToPage(plugin.id)} disabled={!plugin.enabled}>
               <Icon name="eye" size={12} /> 预览
             </button>
             <button class="action-btn" onclick={() => moveUp(idx)} disabled={idx === 0}>
@@ -191,6 +215,7 @@
             <button class="action-btn" onclick={() => moveDown(idx)} disabled={idx === plugins.length - 1}>
               <Icon name="chevron-down" size={12} />
             </button>
+            {/if}
             {#if plugin.type !== 'builtin'}
               <button class="action-btn danger" onclick={() => uninstallPlugin(plugin.id)}>
                 <Icon name="trash" size={12} />
@@ -205,12 +230,18 @@
   <button class="btn-ghost" onclick={refresh} style="margin-top: 16px;">
     <Icon name="refresh" size={14} /> 刷新插件列表
   </button>
+  {/if}
 </div>
 
 <style>
+  .hidden { display: none; }
+  .view-tabs { display: flex; gap: 3px; padding: 3px; background: var(--card-hover); border-radius: 10px; width: max-content; margin-bottom: 22px; }
+  .view-tabs button { font: inherit; font-size: 13px; padding: 8px 20px; border-radius: 8px; color: var(--text-secondary); background: transparent; cursor: pointer; }
+  .view-tabs button.active { color: var(--text-primary); background: var(--card); box-shadow: 0 1px 4px #0001; }
+  .quota-kind { font-size: 11px; color: var(--accent); }
   .plugin-source-links { font-size: 11px; color: var(--text-secondary); margin: 8px 0; }
   .plugin-source-links button { color: var(--accent); font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-  .page { max-width: 560px; }
+  .page { max-width: 760px; }
   .page-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
   .page-title { font-size: 22px; font-weight: 600; margin: 0; }
   .switch-actions { display: flex; align-items: center; gap: 12px; }
