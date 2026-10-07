@@ -1,0 +1,17 @@
+{
+  "id": "github-api-quota",
+  "name": "示例 · GitHub 接口额度",
+  "description": "读取 GitHub API 剩余额度与重置时间，无 Token 也可使用。",
+  "version": "1.0.0",
+  "minAppVersion": "1.2.0",
+  "kind": "quota",
+  "targets": [
+    "windows",
+    "esp32"
+  ],
+  "author": "Monitor contributors",
+  "repository": "https://github.com/Fin2003/monitor-windows/tree/main/examples/plugins/github-api-quota",
+  "license": "ISC",
+  "icon": "coding",
+  "defaultEnabled": false
+}

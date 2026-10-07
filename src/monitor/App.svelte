@@ -957,7 +957,7 @@
       {:else if currentPlugin?.htmlPath}
         <iframe
           src={`file://${currentPlugin.htmlPath}`}
-          sandbox="allow-scripts allow-same-origin"
+          sandbox={currentPlugin.type === 'user' ? 'allow-scripts' : 'allow-scripts allow-same-origin'}
           frameborder="0"
           allowfullscreen
           title={currentPlugin.name}

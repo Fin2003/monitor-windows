@@ -1,0 +1,58 @@
+name: 插件投稿 / Submit a plugin
+description: 提交社区插件资料，或直接向 main 的市场索引提交 PR。
+title: '[Plugin] '
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎投稿！插件保留在作者自己的公开仓库，Monitor 只收录索引。
+        请勿提交个人 API Key、Cookie、登录文件或本机配置。
+        See docs/plugins.en.md for English instructions. A catalog PR is also welcome.
+  - type: input
+    id: source
+    attributes:
+      label: 公开源码 / Public source URL
+    validations:
+      required: true
+  - type: input
+    id: archive
+    attributes:
+      label: 固定版本 ZIP / Versioned ZIP URL
+    validations:
+      required: true
+  - type: input
+    id: checksum
+    attributes:
+      label: ZIP SHA256
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 插件版本与最低 Monitor 版本 / Versions
+      placeholder: '1.0.0 / Monitor 1.2.0'
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 类型 / Kind
+      options:
+        - 'display: Windows 静态页面'
+        - 'quota: Windows / ESP32 额度查询'
+    validations:
+      required: true
+  - type: input
+    id: license
+    attributes:
+      label: 开源协议 / License
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: 功能、兼容范围与网络接口 / Features, compatibility and endpoints
+      description: 写明是否需要使用者自行配置凭据。Describe user authentication if needed.
+    validations:
+      required: true
