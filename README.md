@@ -2,7 +2,7 @@
 
 ## Windows EXE release
 
-Download `Monitor-ESP32-1.1.2-Setup-x64.exe` from this private repository's Releases and double-click it. It installs the application and shortcuts, then starts the app. Electron, the Windows hardware engine's .NET runtime and native serial libraries are included; Node.js, npm and .NET do not need to be installed on the destination computer. Windows x64 is required. The package is unsigned.
+Download `Monitor-ESP32-1.1.3-Setup-x64.exe` from this private repository's Releases and double-click it. It installs the application and shortcuts, then starts the app. Electron, the Windows hardware engine's .NET runtime and native serial libraries are included; Node.js, npm and .NET do not need to be installed on the destination computer. Windows x64 is required. The package is unsigned.
 
 The board is discovered over USB automatically. Select a port if multiple ESP32 devices are attached. The EXE uses a separate `%APPDATA%/monitor-esp32` profile; sign in and configure your own keys after installation. Optional light protocol identifiers are stored in that profile's `lights-connection.json` file. Installing the EXE does not flash the board; the host and firmware must come from this branch together.
 
@@ -72,3 +72,26 @@ Updated daily by GitHub Actions, including in this private repository. No person
 </picture>
 
 Generated with [GH Star History for Actions](https://github.com/kernalix7/GH-Star-History-for-Actions).
+
+## 额度与余额渠道
+
+渠道管理支持 21 类公开渠道：火山、OpenCode Go、讯飞、Kimi、智谱个人/团队、
+MiniMax、ZenMux、Command Code；Claude、Codex、Gemini、Grok/xAI 官方订阅与
+GitHub Copilot；DeepSeek、StepFun、SiliconFlow、OpenRouter、Novita 余额；
+New API/One API 和兼容 CC Switch 的自定义查询脚本。
+
+官方订阅使用用户主动选择的 CLI 登录文件或 OAuth Token；Copilot 支持设备码登录。
+API Key、Token、组织/项目 ID、选中的文件路径及自定义脚本使用 Windows 系统加密，
+只保存在此安装的本地配置目录。发布包不附带账号、登录文件或个人脚本。
+Gemini 自动刷新 OAuth；其他 CLI 文件由各自 CLI 更新登录后，Monitor 自动读入新值。
+
+额度管理按接口实际返回的窗口、模型、币种和次数显示全部项目；余额没有总额时显示
+实际剩余数值，不生成已用百分比。ESP32 沿用已有固件布局，多个账号/多组额度每
+15 秒轮换；无需刷写硬件。查询模式支持国内/国际版智谱、MiniMax 和 SiliconFlow。
+自定义查询使用 CC Switch 的 request/extractor 格式，支持对象或数组结果，
+QuickJS 执行环境不提供本机文件与进程接口。
+
+新增逻辑改编自 CC Switch f9db9f7056cbe7f972cdc02644722002316866b9；
+Grok 账单解析经其引用 CodexBar。完整 MIT 许可证和来源说明随安装包提供。
+已进行构建和实际应用接口调试；没有逐个提供商的订阅凭据，不将适配器支持等同于
+所有账号实测成功。未提供可查询接口的模型预设，需使用用户自己的自定义脚本。

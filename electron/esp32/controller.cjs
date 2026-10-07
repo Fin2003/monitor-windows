@@ -16,6 +16,7 @@ function managerSummary({config={},sourceConfig=config,cache={},system=null,rada
   const radarConfig=radar?.config||config.tiboRadar||{};
   const accountChannels=source.accountChannels||{};
   const providerMeta={
+    ...Object.fromEntries(Object.entries(require('../providers/quota-catalog.json')).map(([type,item])=>[type,{kind:item.name,subtitle:item.source||'CC Switch',description:item.description}])),
     kimi:{kind:'Kimi Coding',subtitle:'CC Switch',description:'套餐接口用量追踪'},
     zhipu:{kind:'智谱 GLM',subtitle:'CC Switch',description:'国内 / 国际版套餐用量'},
     minimax:{kind:'MiniMax',subtitle:'CC Switch',description:'国内 / 国际版套餐用量'},

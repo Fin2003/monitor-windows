@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import quotaCatalog from '../../../electron/providers/quota-catalog.json';
   import Icon from '@shared/components/Icon.svelte';
   import { normalizeOverview, codingChannelKeys } from '../../shared/compact-overview-config.cjs';
   import { appendCodingCards, appendSystemCard } from '../../shared/overview-editor.cjs';
@@ -121,7 +122,7 @@
         sensors = cached?.data?.sensors || [];
         aliases = hardware.sensorAliases || {};
         selectedSensorIds = hardware.selectedSensors || [];
-        const names = { kimi: 'Kimi Coding', zhipu: '智谱 GLM', minimax: 'MiniMax', zenmux: 'ZenMux', commandcode: 'Command Code', volcengine: '火山方舟', xfyun: '讯飞星火', opencodego: 'OpenCode Go' };
+        const names = { ...Object.fromEntries(Object.entries(quotaCatalog).map(([type, item]) => [type, item.name])), kimi: 'Kimi Coding', zhipu: '智谱 GLM', minimax: 'MiniMax', zenmux: 'ZenMux', commandcode: 'Command Code', volcengine: '火山方舟', xfyun: '讯飞星火', opencodego: 'OpenCode Go' };
         const candidates = new Map();
         for (const account of config.channelAccounts || []) {
           if (account.enabled === false || !names[account.type]) continue;

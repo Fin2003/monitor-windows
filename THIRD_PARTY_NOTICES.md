@@ -93,3 +93,18 @@ QuotaRadar at d8d020b0dd4055c5c3defc8dc7b404fc9a132fbc (MIT). https://github.com
 Both full license texts are retained in licenses and packaged with the application.
 This is an independent JavaScript adaptation; CC Switch is not a runtime dependency.
 XFYun uses QuotaRadar's web-session endpoint, since CC Switch has no XFYun adapter.
+
+## Extended quota queries
+
+Official subscriptions (Claude, Codex, Gemini, Grok), Copilot, balance queries,
+Zhipu Team and the request/extractor script contract are adapted from CC Switch
+revision f9db9f7056cbe7f972cdc02644722002316866b9 (MIT).
+https://github.com/farion1231/cc-switch
+The Grok billing parser in that upstream is based on CodexBar (MIT).
+Copyright (c) 2026 Peter Steinberger. https://github.com/steipete/CodexBar
+QuickJS-emscripten 0.32.0 and QuickJS / QuickJS-NG are MIT; the corresponding
+license texts accompany the installation. https://github.com/justjake/quickjs-emscripten
+The Gemini installed-app OAuth client identifiers are public values from
+Gemini CLI through CC Switch. They are not an account token or user secret.
+Account OAuth tokens, API keys, imported-file paths, scripts and cookies are
+created and stored on the user's machine only.

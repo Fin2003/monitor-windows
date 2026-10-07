@@ -1,19 +1,15 @@
 <script>
   import { onMount } from 'svelte';
   import Icon from '@shared/components/Icon.svelte';
+  import quotaCatalog from '../../electron/providers/quota-catalog.json';
+  import QuotaUsage from './components/QuotaUsage.svelte';
   import CodingPlanQuerySettings from './components/CodingPlanQuerySettings.svelte';
 
   const PROVIDER_TYPES = {
-    kimi: { name: 'Kimi Coding', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
-    zhipu: { name: '智谱 GLM', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
-    minimax: { name: 'MiniMax', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
-    zenmux: { name: 'ZenMux', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
-    commandcode: { name: 'Command Code', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
-    volcengine: { name: '火山方舟', subtitle: 'Volcengine ARK', description: 'Coding Plan + Agent Plan 用量追踪' },
-    opencodego: { name: 'opencode Go', subtitle: 'opencode.ai', description: 'API Key 或网页登录会话接口查询' },
-    xfyun: { name: '讯飞星火', subtitle: 'Xfyun Spark', description: '套餐用量追踪' },
+    ...Object.fromEntries(Object.entries(quotaCatalog).map(([type, item]) => [type, { ...item, subtitle: (item.source || 'CC Switch') + ' · MIT' }])),
   };
 
+  let quotaData = $state({});
   let accounts = $state([]);
   let loginStatus = $state({});
   let providerErrors = $state({});
@@ -526,6 +522,7 @@
   }
 
   window.api?.onProviderUpdate?.(({ providerId, data, error, status, fetching, planStatus: nextPlanStatus, catalogStatus: nextCatalogStatus, availablePlans }) => {
+    if (data) quotaData = { ...quotaData, [providerId]: data };
     const next = { ...loginStatus };
     if (status) next[providerId] = status;
     providerErrors = { ...providerErrors, [providerId]: error || '' };
@@ -555,6 +552,7 @@
   });
 
   onMount(() => {
+    window.api.getCachedProviderData().then(cache => quotaData = Object.fromEntries(Object.entries(cache || {}).map(([id, entry]) => [id, entry.data])));
     loadAccounts().then(() => {
       loadCredentials();
       loadProxyPorts();
@@ -705,14 +703,13 @@
           <label>渠道类型</label>
           <select bind:value={newChannel.type}>
             <option value="">请选择...</option>
-            <option value="volcengine">火山方舟</option>
-            <option value="opencodego">opencode Go</option>
-            <option value="xfyun">讯飞星火</option>
-            <option value="kimi">Kimi Coding</option>
-            <option value="zhipu">智谱 GLM</option>
-            <option value="minimax">MiniMax</option>
-            <option value="zenmux">ZenMux</option>
-            <option value="commandcode">Command Code</option>
+            {#each ['编程套餐', '官方订阅', '账户余额', '通用接口'] as group}
+              <optgroup label={group}>
+                {#each Object.entries(quotaCatalog).filter(([, item]) => item.group === group) as [type, item]}
+                  <option value={type}>{item.name}</option>
+                {/each}
+              </optgroup>
+            {/each}
           </select>
         </div>
         <div class="dialog-row">
@@ -954,6 +951,7 @@
           {:else if type === 'xfyun'}
             <p class="query-attribution">登录会话接口 · <button onclick={() => window.api.openExternal('https://github.com/Asklear/QuotaRadar')}>QuotaRadar · MIT</button></p>
           {/if}
+          {#if type !== 'xfyun'}<QuotaUsage data={quotaData[acc.id]} />{/if}
           {#if providerErrors[acc.id]}<p class="provider-error" role="status">{providerErrors[acc.id]}</p>{/if}
           {#if type === 'opencodego'}
             <div class="creds-section">

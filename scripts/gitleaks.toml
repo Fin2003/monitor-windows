@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public Gemini CLI installed-app OAuth client secret from upstream; not user credentials"
+condition = "AND"
+paths = ['''electron/providers/quota-oauth-clients\.json$''']
+regexTarget = "match"
+regexes = ['''GOCSPX\-4uHgMPm\-1o7Sk\-geV6Cu5clXFsxl''']
