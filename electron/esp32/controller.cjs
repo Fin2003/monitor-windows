@@ -16,12 +16,18 @@ function managerSummary({config={},sourceConfig=config,cache={},system=null,rada
   const radarConfig=radar?.config||config.tiboRadar||{};
   const accountChannels=source.accountChannels||{};
   const providerMeta={
+    kimi:{kind:'Kimi Coding',subtitle:'CC Switch',description:'套餐接口用量追踪'},
+    zhipu:{kind:'智谱 GLM',subtitle:'CC Switch',description:'国内 / 国际版套餐用量'},
+    minimax:{kind:'MiniMax',subtitle:'CC Switch',description:'国内 / 国际版套餐用量'},
+    zenmux:{kind:'ZenMux',subtitle:'CC Switch',description:'Management API 用量'},
+    commandcode:{kind:'Command Code',subtitle:'CC Switch',description:'套餐接口用量追踪'},
+
     volcengine:{kind:'火山方舟',subtitle:'Volcengine ARK',description:'Coding Plan + Agent Plan 用量追踪'},
     opencodego:{kind:'opencode Go',subtitle:'opencode.ai',description:'用量追踪（GitHub / Google 登录）'},
     xfyun:{kind:'讯飞星火',subtitle:'Xfyun Spark',description:'套餐用量追踪'},
   };
   const accountType=account=>account.type||(account.id.startsWith('volcengine_')?'volcengine':account.id.startsWith('xfyun_')?'xfyun':'opencodego');
-  const accounts=['volcengine','opencodego','xfyun'].map(type=>{
+  const accounts=Object.keys(providerMeta).map(type=>{
     const account=enabledAccounts.find(candidate=>accountType(candidate)===type);
     const meta=providerMeta[type];
     if(!account)return {label:'无账号',kind:meta.kind,subtitle:meta.subtitle,description:meta.description,selected:0,available:0,status:'未配置'};
