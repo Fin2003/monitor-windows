@@ -56,7 +56,7 @@ static struct {
     bool radar_replies,radar_paused,radar_running;
     char system_backend[160],system_language[32],system_color[40],system_preview_hardware[80],radar_provider[24],radar_timezone[64];
     struct {int index;char kind[48],cells[32];} overview_layout[6];
-    struct {int selected,available;char label[72],kind[32],subtitle[48],description[96],status[32];} coding_items[4];
+    struct {int selected,available;char label[72],kind[32],subtitle[48],description[96],status[32];} coding_items[16];
     char system_names[6][80];
     struct {
         int selected,total,sensor_count;
@@ -812,7 +812,7 @@ static void render_plugin_settings(int id) {
         manager_heading(settings_body,42,10,330,"Coding Plan 管理",foreground());manager_meta(settings_body,42,49,620,"登录账号后自动获取用量数据，每个账号独立隔离",secondary());
         manager_button(settings_body,736,16,118,38,"+  新建渠道",true,false,NULL,NULL);manager_ascii_pill(settings_body,866,16,110,"DEBUG",secondary(),manager_card_bg());
         lv_obj_t *cards=manager_scroll(settings_body,36,94,952,460);
-        int shown=manager_info.coding_item_count<4?manager_info.coding_item_count:4;
+        int shown=manager_info.coding_item_count<16?manager_info.coding_item_count:16;
         if(!shown){lv_obj_t *empty=manager_card(cards,8,0,920,150);manager_text(empty,20,16,400,"暂无账号",foreground());manager_text(empty,20,52,620,"请先在 Windows 后端添加并登录账号",secondary());}
         for(int i=0;i<shown;i++){
             int y=i*174;bool selected=manager_info.coding_items[i].selected>0;lv_obj_t *card=manager_card(cards,8,y,920,160);
@@ -938,7 +938,7 @@ static void apply_manager_summary(cJSON *root) {
     if(cJSON_IsObject(coding)){
         manager_info.coding_accounts=json_int(coding,"accounts",manager_info.coding_accounts);manager_info.coding_channels=json_int(coding,"channels",manager_info.coding_channels);
         manager_info.coding_item_count=0;cJSON *items=cJSON_GetObjectItemCaseSensitive(coding,"items"),*entry;
-        cJSON_ArrayForEach(entry,items){if(manager_info.coding_item_count>=4)break;int i=manager_info.coding_item_count++;
+        cJSON_ArrayForEach(entry,items){if(manager_info.coding_item_count>=16)break;int i=manager_info.coding_item_count++;
             manager_info.coding_items[i].selected=json_int(entry,"selected",0);manager_info.coding_items[i].available=json_int(entry,"available",0);
             copy_json_text(manager_info.coding_items[i].label,sizeof(manager_info.coding_items[i].label),entry,"label");copy_json_text(manager_info.coding_items[i].kind,sizeof(manager_info.coding_items[i].kind),entry,"kind");
             copy_json_text(manager_info.coding_items[i].subtitle,sizeof(manager_info.coding_items[i].subtitle),entry,"subtitle");copy_json_text(manager_info.coding_items[i].description,sizeof(manager_info.coding_items[i].description),entry,"description");

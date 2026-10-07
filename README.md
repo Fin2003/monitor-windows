@@ -2,7 +2,7 @@
 
 ## Windows EXE release
 
-Download `Monitor-ESP32-1.1.0-Setup-x64.exe` from this private repository's Releases and double-click it. It installs the application and shortcuts, then starts the app. Electron, the Windows hardware engine's .NET runtime and native serial libraries are included; Node.js, npm and .NET do not need to be installed on the destination computer. Windows x64 is required. The package is unsigned.
+Download `Monitor-ESP32-1.1.1-Setup-x64.exe` from this private repository's Releases and double-click it. It installs the application and shortcuts, then starts the app. Electron, the Windows hardware engine's .NET runtime and native serial libraries are included; Node.js, npm and .NET do not need to be installed on the destination computer. Windows x64 is required. The package is unsigned.
 
 The board is discovered over USB automatically. Select a port if multiple ESP32 devices are attached. The EXE uses a separate `%APPDATA%/monitor-esp32` profile; sign in and configure your own keys after installation. Optional light protocol identifiers are stored in that profile's `lights-connection.json` file. Installing the EXE does not flash the board; the host and firmware must come from this branch together.
 

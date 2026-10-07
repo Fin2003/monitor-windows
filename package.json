@@ -1,6 +1,6 @@
 {
   "name": "monitor-esp32",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Windows host and ESP32-S3 touchscreen monitor with Coding Plan, hardware sensors, Radar and optional light control",
   "main": "electron/entry.js",
   "scripts": {
@@ -89,7 +89,8 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "icon": "electron/assets/app-icon.ico"
     },
     "appId": "io.github.monitor.esp32",
     "productName": "Monitor ESP32",
@@ -103,7 +104,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "runAfterFinish": true,
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "electron/assets/app-icon.ico",
+      "uninstallerIcon": "electron/assets/app-icon.ico"
     },
     "extraResources": [
       {
