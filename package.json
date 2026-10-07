@@ -1,0 +1,126 @@
+{
+  "name": "monitor-windows",
+  "version": "1.0.5",
+  "description": "Windows secondary-display monitor with Coding Plan, hardware sensors and Tibo Radar plugins",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && electron . --dev",
+    "dev": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron\"",
+    "build": "vite build",
+    "build:engine": "dotnet publish plugins/system-monitor/engine/SystemMonitorEngine.csproj -c Release -o plugins/system-monitor/engine/win-x64 && node scripts/stage-system-monitor-windows.js",
+    "build:engine:linux": "node scripts/build-system-monitor-linux.js",
+    "start": "electron .",
+    "pack": "npm run build:engine && npm run build && electron-builder --dir",
+    "pack:linux": "npm run build:engine:linux && npm run build && electron-builder --linux dir",
+    "dist": "npm run build:engine && npm run build && electron-builder",
+    "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-dependencies.ps1",
+    "dist:win": "npm run build:engine && npm run build && electron-builder --win nsis --x64 --publish never"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "build": {
+    "files": [
+      "src/shared/*.cjs",
+      "dist/**",
+      "electron/**",
+      "plugins/**",
+      "scripts/monitor-autostart.ps1",
+      "scripts/monitor-autostart.vbs",
+      "package.json",
+      "!plugins/**/*.test.*",
+      "!plugins/system-monitor/engine/bin/**",
+      "!plugins/system-monitor/engine/obj/**",
+      "!plugins/system-monitor/engine/.build/**",
+      "!plugins/system-monitor/engine/third-party/**",
+      "!plugins/system-monitor/engine/linux/**",
+      "!plugins/system-monitor/engine/*.cs",
+      "!plugins/system-monitor/engine/*.csproj",
+      "!plugins/system-monitor/engine/Resources/**",
+      "!plugins/system-monitor/runtime/*.json",
+      "!plugins/system-monitor/runtime/*.log",
+      "!plugins/system-monitor/runtime/cleanup-stale-electron",
+      "!**/enable-experimental-pawnio.flag",
+      "!plugins/system-monitor/engine/win-x64/**/*.pdb",
+      "!**/PawnIO-unrestricted.sys",
+      "!**/.device-profile/**",
+      "!**/.review-profile/**",
+      "!**/.tools/**",
+      "!**/sensor-cache.json",
+      "!**/driver-state.json",
+      "!**/*credentials*.json",
+      "!**/*sessions*.json",
+      "!**/Cookies*",
+      "!**/Local State",
+      "!**/Cache/**",
+      "!**/Code Cache/**",
+      "!**/GPUCache/**",
+      "!**/Partitions/**",
+      "!**/Local Storage/**",
+      "!**/Session Storage/**",
+      "!**/*.bak",
+      "!**/*.log",
+      "!**/*.pdb",
+      "!electron/debug_displays.js"
+    ],
+    "asarUnpack": [
+      "plugins/system-monitor/engine/win-x64/**",
+      "plugins/system-monitor/engine/win-arm64/**",
+      "plugins/system-monitor/engine/linux-x64/**",
+      "plugins/system-monitor/engine/linux-arm64/**"
+    ],
+    "win": {
+      "requestedExecutionLevel": "asInvoker",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "appId": "io.github.monitor.windows",
+    "productName": "Monitor Windows",
+    "directories": {
+      "output": "release"
+    },
+    "artifactName": "Monitor-Windows-${version}-Setup-${arch}.${ext}",
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "extraResources": [
+      {
+        "from": "LICENSE",
+        "to": "licenses/Monitor-LICENSE.txt"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "licenses/THIRD_PARTY_NOTICES.md"
+      },
+      {
+        "from": "licenses",
+        "to": "licenses/third-party"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "concurrently": "^10.0.3",
+    "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
+    "svelte": "^5.56.4",
+    "vite": "^8.1.3",
+    "wait-on": "^9.0.10"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

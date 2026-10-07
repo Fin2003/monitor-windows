@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "repository": "Fin2003/monitor-windows",
+  "repositoryId": "1407105559",
+  "repositoryCreatedAt": "2026-10-06",
+  "updatedAt": "2026-10-07T08:04:25.005Z",
+  "observedFrom": "2026-10-07",
+  "backfill": {
+    "generatedAt": "2026-10-07T05:38:31.852Z",
+    "basis": "currently-active-stargazers",
+    "limitation": "Stars removed before the first collection cannot be recovered."
+  },
+  "points": [
+    {
+      "date": "2026-10-07",
+      "count": 1,
+      "source": "observed"
+    }
+  ]
+}

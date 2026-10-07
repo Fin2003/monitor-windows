@@ -1,0 +1,9 @@
+{
+  "id": "tibo-radar",
+  "name": "Tibo 雷达",
+  "icon": "refresh",
+  "version": "1.0.0",
+  "description": "重置预告、完成通知与延迟观察",
+  "sourceName": "Tibo / X · FxTwitter · Codex Resets",
+  "sourceUrl": "https://x.com/thsottiaux"
+}
