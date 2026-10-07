@@ -17,7 +17,7 @@ function codingCards({ config = {}, cache = {}, now = Date.now() } = {}) {
     const agent = channel.endsWith(':agent'), offset = agent ? 3 : 0;
     let periods;
     if (account.type === 'xfyun') {
-      const plan = (data.plans || []).find(plan => channel.endsWith(':' + plan.name)) || data.plans?.[0];
+      const plan = (data.plans || []).find(plan => channel.endsWith(':' + plan.name.replace('讯飞星火 ', ''))) || data.plans?.[0];
       periods = (plan?.periods || []).slice(0, 3).map(period => {
         const item = period.usage?.[0], used = number(item?.used), total = number(item?.total);
         return { label: text(period.label, 14), pct: total > 0 && used != null ? used / total * 100 : null, countdown: '—', remaining: null };
@@ -36,7 +36,7 @@ function codingCards({ config = {}, cache = {}, now = Date.now() } = {}) {
     const next = Math.min(...periods.map(item => item.remaining).filter(value => value > 0));
     const minutes = Math.ceil(next / 60000), hours = Math.floor(minutes / 60);
     cards.push({ name: text(config.providerNames?.[channel] || config.providerNames?.[id] || account.label ||
-      ({ volcengine: '火山方舟', opencodego: 'opencode Go', xfyun: '讯飞星火' }[account.type] || 'Coding Plan') + (agent ? ' Agent' : '')),
+      ({ kimi: 'Kimi Coding', zhipu: '智谱 GLM', minimax: 'MiniMax', zenmux: 'ZenMux', commandcode: 'Command Code', volcengine: '火山方舟', opencodego: 'opencode Go', xfyun: '讯飞星火' }[account.type] || 'Coding Plan') + (agent ? ' Agent' : '')),
       periods, center: Number.isFinite(next) ? { value: String(hours || minutes), unit: hours ? '时' : '分' } : { value: '—', unit: '' } });
   }
   while (cards.length < 2) cards.push({ name: 'Coding Plan', periods: ['5小时', '周', '月'].map(label => ({ label, pct: null, countdown: '—' })), center: { value: '—', unit: '' } });

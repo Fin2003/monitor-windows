@@ -9,6 +9,8 @@ const ProviderManager = require('./providers/ProviderManager');
 const VolcengineProvider = require('./providers/VolcengineProvider');
 const XfyunProvider = require('./providers/XfyunProvider');
 const OpencodeGoProvider = require('./providers/OpencodeGoProvider');
+const CodingPlanApiProvider = require('./providers/CodingPlanApiProvider');
+const API_PROVIDER_CLASSES = Object.fromEntries(['kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].map(type => [type, class extends CodingPlanApiProvider { constructor() { super(type); } }]));
 const { SystemMonitorClient } = require('./system-monitor-client');
 const SystemMonitorRuntime = require('./system-monitor-runtime');
 const TiboRadar = require('../plugins/tibo-radar/runtime.cjs');
@@ -414,7 +416,7 @@ function setupIPC() {
     const VolcengineProvider = require('./providers/VolcengineProvider');
     const XfyunProvider = require('./providers/XfyunProvider');
     const OpencodeGoProvider = require('./providers/OpencodeGoProvider');
-    const PROVIDER_CLASSES = { volcengine: VolcengineProvider, xfyun: XfyunProvider, opencodego: OpencodeGoProvider };
+    const PROVIDER_CLASSES = { ...API_PROVIDER_CLASSES, volcengine: VolcengineProvider, xfyun: XfyunProvider, opencodego: OpencodeGoProvider };
     const Cls = PROVIDER_CLASSES[type];
     if (!Cls) return { error: 'Unknown provider type' };
     const provider = new Cls();
@@ -588,7 +590,7 @@ function cleanPartitionCache() {
   const partitionsDir = path.join(app.getPath('userData'), 'Partitions');
   if (!fs.existsSync(partitionsDir)) return;
 
-  const validTypes = new Set(['volcengine', 'xfyun', 'opencodego']);
+  const validTypes = new Set(['volcengine', 'xfyun', 'opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode']);
   const validPartitions = new Set(['tibo-radar-public', 'tibo-radar-anonymous']);
   for (const entry of fs.readdirSync(partitionsDir, { withFileTypes: true }).filter(d => d.isDirectory())) {
     const type = entry.name.split('_')[0];
@@ -619,7 +621,7 @@ function cleanPartitionCache() {
   }
 }
 
-const VALID_PROVIDER_TYPES = ['volcengine', 'xfyun', 'opencodego'];
+const VALID_PROVIDER_TYPES = ['volcengine', 'xfyun', 'opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'];
 
 function migrateChannelKey(k) {
   if (k.includes('_')) return k;
@@ -722,7 +724,7 @@ app.whenReady().then(async () => {
   const XfyunProvider = require('./providers/XfyunProvider');
   const OpencodeGoProvider = require('./providers/OpencodeGoProvider');
 
-  const PROVIDER_CLASSES = { volcengine: VolcengineProvider, xfyun: XfyunProvider, opencodego: OpencodeGoProvider };
+  const PROVIDER_CLASSES = { ...API_PROVIDER_CLASSES, volcengine: VolcengineProvider, xfyun: XfyunProvider, opencodego: OpencodeGoProvider };
   const channelAccounts = configStore.get('channelAccounts') || [
     { id: 'volcengine_0', type: 'volcengine', label: '', enabled: true },
     { id: 'xfyun_0', type: 'xfyun', label: '', enabled: true },

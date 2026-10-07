@@ -50,6 +50,7 @@ class ProviderManager {
 
   register(provider) {
     this.#providers.set(provider.id, provider);
+    this.#applyProviderConfig(provider.id);
   }
 
   unregister(providerId) {
@@ -99,6 +100,8 @@ class ProviderManager {
       catalogStatus: p.catalogStatus || null,
       availablePlans: p.availablePlans || [],
       lastError: p.lastError || null,
+      source: p.source || null,
+      directAuth: p.isDirectAuth?.() || false,
     }));
   }
 
@@ -111,6 +114,7 @@ class ProviderManager {
   }
 
   async #captureLoginInfo(providerId, scraper) {
+    if (this.#providers.get(providerId)?.queryApiAuth) return null;
     try {
       const info = await scraper.executeScript(() => {
         const text = document.body.innerText || '';
@@ -221,6 +225,17 @@ class ProviderManager {
     scraper.stopLoginWatch();
 
     try {
+      if (provider.queryApiAuth) {
+        const result = await provider.checkAuth(scraper);
+        this.#sendUpdate(providerId, null, result.error || null);
+        if (result.status === 'connected') {
+          this.#sendUpdate(providerId, await provider.fetchData(scraper));
+          scraper.hideLoginWindows(); return { success: true, status: 'connected' };
+        }
+        if (provider.isDirectAuth()) return { success: false, status: result.status, error: result.error };
+        await scraper.loadPage(provider.consoleUrl); scraper.showWindow(); provider.status = 'waiting';
+        this.#sendUpdate(providerId); return { needsBrowser: true };
+      }
       scraper.showWindow();
 
       await scraper.reloadPage(provider.consoleUrl);
@@ -456,9 +471,9 @@ class ProviderManager {
         return { success: true, status: 'connected' };
       }
 
-      provider.status = 'unauthorized';
-      this.#sendUpdate(providerId, null, '未登录');
-      return { success: false, status: 'unauthorized', message: '未检测到登录信息，请重试' };
+      provider.status = result.status;
+      this.#sendUpdate(providerId, null, result.error || '未登录');
+      return { success: false, status: result.status, message: result.error || '未检测到登录信息，请重试' };
     } catch (e) {
       console.error(`[ProviderManager] confirmLogin ${providerId} error:`, e.message);
       provider.status = 'error';
@@ -663,31 +678,32 @@ class ProviderManager {
 
   setProviderConfig(providerId, config) {
     if (!this.#configStore) return;
+    const provider = this.#providers.get(providerId);
+    const { apiKey, accessKeyId, secretAccessKey, ...metadata } = config;
+    if (apiKey || accessKeyId || secretAccessKey) provider.authStore.write(providerId, { apiKey, accessKeyId, secretAccessKey });
     const all = this.#configStore.get('providerConfig') || {};
-    all[providerId] = config;
+    all[providerId] = { ...all[providerId], ...metadata };
     this.#configStore.set('providerConfig', all);
     this.#applyProviderConfig(providerId);
+    if (provider.queryApiAuth) {
+      provider.lastError = null;
+    }
   }
 
   getProviderConfig(providerId) {
-    if (!this.#configStore) return null;
-    const all = this.#configStore.get('providerConfig') || {};
-    return all[providerId] || null;
+    const config = this.#configStore?.get('providerConfig')?.[providerId] || {};
+    return { ...config, ...(this.#providers.get(providerId)?.authStore?.flags?.(providerId) || {}) };
   }
 
   #applyProviderConfig(providerId) {
     const provider = this.#providers.get(providerId);
     if (!provider || !this.#configStore) return;
-    const config = this.#configStore.get('providerConfig') || {};
-    const pc = config[providerId];
-    if (pc && provider.setWorkspaceUrl) {
-      provider.setWorkspaceUrl(pc.workspaceUrl);
-    }
+    const pc = this.#configStore.get('providerConfig')?.[providerId] || {};
+    provider.setConfig?.(pc);
+    if (provider.setWorkspaceUrl) provider.setWorkspaceUrl(pc.workspaceUrl);
   }
 
-  applyProviderConfig(providerId) {
-    this.#applyProviderConfig(providerId);
-  }
+  applyProviderConfig(providerId) { this.#applyProviderConfig(providerId); }
 
   #sendUpdate(providerId, data = null, error = null) {
     this.#reconcileAvailableChannels(providerId);
@@ -737,7 +753,7 @@ class ProviderManager {
     if (type === 'volcengine') {
       const statuses = provider.planStatus || {};
       const settled = ['coding', 'agent'].every(key =>
-        statuses[key] && statuses[key] !== 'unknown' && statuses[key] !== 'checking'
+        ['active', 'unavailable'].includes(statuses[key])
       );
       if (!settled) return;
       validChannels = [];
@@ -901,7 +917,7 @@ class ProviderManager {
       const provider = this.#providers.get(providerId);
       if (!provider || provider.status !== 'connected') continue;
       const type = channelKey.split('_')[0].split(':')[0];
-      if (type !== 'volcengine' && type !== 'xfyun' && type !== 'opencodego') continue;
+      if (!provider.fetchChannel) continue;
 
       const st = this.#channelState.get(channelKey);
       if (!st || st.fetching || now < st.nextFetchAt) continue;
@@ -1126,7 +1142,10 @@ class ProviderManager {
     const offset = result.channelOffset || 0;
 
     const planNames = result.plans.map(p => p.name);
-    const otherPlans = (cached.plans || []).filter(p => !planNames.includes(p.name));
+    const type = providerId.split('_')[0];
+    const otherPlans = type === 'volcengine'
+      ? (cached.plans || []).filter(p => p.name.startsWith('Agent-') !== channelKey.endsWith(':agent'))
+      : type === 'xfyun' ? (cached.plans || []).filter(p => !planNames.includes(p.name)) : [];
     const allPlans = [...otherPlans, ...result.plans];
 
     const allCountdowns = cached.countdowns ? [...cached.countdowns] : [];
@@ -1135,7 +1154,7 @@ class ProviderManager {
       allCountdowns[offset + i] = resultCountdowns[i];
     }
 
-    const data = { plans: allPlans, countdowns: allCountdowns, url: cached.url || '', _fetchTime: Date.now() };
+    const data = { plans: allPlans, countdowns: allCountdowns, url: result.url || cached.url || '', source: result.source || cached.source, _fetchTime: Date.now() };
     cache[providerId] = { data, timestamp: Date.now() };
     if (this.#configStore) {
       try { this.#configStore.set('providerCache', cache); } catch(_) {}
@@ -1181,7 +1200,7 @@ class ProviderManager {
         this.#sendUpdate(id, cachedData);
         await this.#fetchProviderChannels(id, provider, scraper);
       } else {
-        this.#sendUpdate(id);
+        this.#sendUpdate(id, null, result.error || null);
         const creds = this.#getCredentials(id);
         if (!provider.skipAutoLogin && creds && creds.username && creds.password) {
           try {
@@ -1425,6 +1444,45 @@ class ScraperSession {
       this.#win.webContents.on('did-stop-loading', onStop);
       this.signal.addEventListener('abort', done, { once: true });
       resetTimer();
+    });
+  }
+
+  async readApiResponse(targetUrl, accepts, parse) {
+    this.#ensureWindow();
+    if (!this.getURL() || this.getURL() === 'about:blank') {
+      try { await this.loadPage(targetUrl); }
+      catch (error) { throw new (require('./coding-plan-api').QueryError)(error.code === 'ERR_PROXY_CONNECTION_FAILED' ? 'OpenCode 代理连接失败，请启动代理或在账号设置中清空代理端口' : 'OpenCode 控制台连接失败', 'network'); }
+    }
+    const contents = this.#win.webContents, debug = contents.debugger;
+    const { QueryError } = require('./coding-plan-api');
+    if (!debug.isAttached()) debug.attach('1.3');
+    await debug.sendCommand('Network.enable');
+    return new Promise((resolve, reject) => {
+      const requests = new Set();
+      let finished = false;
+      const finish = (error, data) => {
+        if (finished) return; finished = true; clearTimeout(timer);
+        debug.removeListener('message', onMessage); this.signal.removeEventListener('abort', onAbort);
+        if (debug.isAttached()) debug.detach();
+        error ? reject(error) : resolve(data);
+      };
+      const onAbort = () => finish(this.signal.reason);
+      const timer = setTimeout(() => {
+        const login = /\/auth\/|\/login|\/authorize/.test(contents.getURL());
+        finish(new QueryError(login ? '网页登录会话已失效，请重新连接' : 'OpenCode 没有返回套餐用量接口数据；可在查询设置中使用 Go API Key', login ? 'auth' : 'schema'));
+      }, 20000);
+      const onMessage = async (_event, method, params) => {
+        try {
+          if (method === 'Network.responseReceived' && accepts(params.response.url)) requests.add(params.requestId);
+          if (method !== 'Network.loadingFinished' || !requests.delete(params.requestId)) return;
+          const response = await debug.sendCommand('Network.getResponseBody', { requestId: params.requestId });
+          const text = response.base64Encoded ? Buffer.from(response.body, 'base64').toString('utf8') : response.body;
+          const data = parse(text);
+          if (data) finish(null, data);
+        } catch (error) { if (!finished) finish(new QueryError('OpenCode 用量接口响应读取失败', 'network')); }
+      };
+      debug.on('message', onMessage); this.signal.addEventListener('abort', onAbort, { once: true });
+      contents.loadURL(targetUrl).catch(error => finish(new QueryError(error.code === 'ERR_PROXY_CONNECTION_FAILED' ? 'OpenCode 代理连接失败，请启动代理或在账号设置中清空代理端口' : 'OpenCode 控制台连接失败', 'network')));
     });
   }
 

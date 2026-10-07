@@ -82,3 +82,14 @@ and component notices, GPL texts, and GCC Runtime Library Exception 3.1 are reta
 in licenses. The exception permits this compiled combination to be distributed
 under the licenses of its independent modules. No libstdc++, libquadmath or
 compiler toolchain is bundled. Rebuild using scripts/build-esp32-preview.ps1.
+
+## Coding Plan query sources
+
+The API-key and AK/SK query logic in electron/providers/coding-plan-api.js is adapted
+from CC Switch coding_plan.rs at d35726e28695844deaf0098450b34911f5be7b78.
+Copyright (c) 2025 Jason Young; MIT. https://github.com/farion1231/cc-switch
+The web-session endpoints and OpenCode serialized usage parsing are adapted from
+QuotaRadar at d8d020b0dd4055c5c3defc8dc7b404fc9a132fbc (MIT). https://github.com/Asklear/QuotaRadar
+Both full license texts are retained in licenses and packaged with the application.
+This is an independent JavaScript adaptation; CC Switch is not a runtime dependency.
+XFYun uses QuotaRadar's web-session endpoint, since CC Switch has no XFYun adapter.
