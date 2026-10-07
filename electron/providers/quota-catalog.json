@@ -1,0 +1,23 @@
+{
+  "volcengine": { "name": "火山方舟", "group": "编程套餐", "description": "Coding Plan / Agent Plan", "url": "https://ark.cn-beijing.volces.com/api/coding", "auth": "aksk" },
+  "opencodego": { "name": "OpenCode Go", "group": "编程套餐", "description": "滚动、周、月额度", "url": "https://opencode.ai/zen/go/v1", "auth": "key" },
+  "xfyun": { "name": "讯飞星火", "group": "编程套餐", "description": "QuotaRadar 登录会话接口", "source": "QuotaRadar" },
+  "kimi": { "name": "Kimi Coding", "group": "编程套餐", "description": "编程套餐额度", "url": "https://api.kimi.com/coding/v1", "auth": "key" },
+  "zhipu": { "name": "智谱 GLM", "group": "编程套餐", "description": "国内 / 国际个人套餐", "url": "https://open.bigmodel.cn/api/coding/paas/v4", "auth": "key" },
+  "zhiputeam": { "name": "智谱 GLM 团队", "group": "编程套餐", "description": "团队组织 / 项目额度", "url": "https://open.bigmodel.cn/api/monitor/usage/quota/limit?type=2", "auth": "key", "extended": true },
+  "minimax": { "name": "MiniMax", "group": "编程套餐", "description": "国内 / 国际编程套餐", "url": "https://api.minimaxi.com", "auth": "key" },
+  "zenmux": { "name": "ZenMux", "group": "编程套餐", "description": "Management Key 套餐额度", "url": "https://zenmux.ai/api/v1/management/subscription/detail", "auth": "key" },
+  "commandcode": { "name": "Command Code", "group": "编程套餐", "description": "套餐窗口与余额", "url": "https://api.commandcode.ai/provider", "auth": "key" },
+  "claude": { "name": "Claude 官方订阅", "group": "官方订阅", "description": "总额度、模型周额度与额外用量", "url": "https://api.anthropic.com/api/oauth/usage", "auth": "oauth", "extended": true },
+  "codex": { "name": "Codex 官方订阅", "group": "官方订阅", "description": "ChatGPT 账号的 Codex 配额", "url": "https://chatgpt.com/backend-api/wham/usage", "auth": "oauth", "extended": true },
+  "gemini": { "name": "Gemini 官方订阅", "group": "官方订阅", "description": "Pro / Flash / Flash Lite 模型额度", "url": "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota", "auth": "oauth", "extended": true },
+  "grok": { "name": "Grok / xAI 官方订阅", "group": "官方订阅", "description": "Grok Build / xAI OAuth 订阅额度", "url": "https://grok.com/grok_api_v2.GrokBuildBilling/GetGrokCreditsConfig", "auth": "oauth", "extended": true },
+  "copilot": { "name": "GitHub Copilot", "group": "官方订阅", "description": "Premium、Chat、Completions 配额", "url": "https://api.github.com/copilot_internal/user", "auth": "github", "extended": true },
+  "deepseek": { "name": "DeepSeek", "group": "账户余额", "description": "各币种账户余额", "url": "https://api.deepseek.com/user/balance", "auth": "key", "extended": true },
+  "stepfun": { "name": "阶跃星辰 StepFun", "group": "账户余额", "description": "人民币账户余额", "url": "https://api.stepfun.com/v1/accounts", "auth": "key", "extended": true },
+  "siliconflow": { "name": "硅基流动 SiliconFlow", "group": "账户余额", "description": "国内 / 国际账户余额", "url": "https://api.siliconflow.cn", "auth": "key", "extended": true },
+  "openrouter": { "name": "OpenRouter", "group": "账户余额", "description": "已用额度与剩余余额", "url": "https://openrouter.ai/api/v1/credits", "auth": "key", "extended": true },
+  "novita": { "name": "Novita AI", "group": "账户余额", "description": "美元账户余额", "url": "https://api.novita.ai/v3/user/balance", "auth": "key", "extended": true },
+  "newapi": { "name": "New API / One API", "group": "通用接口", "description": "账户或 API Key 额度", "url": "", "auth": "token", "extended": true },
+  "custom": { "name": "自定义额度接口", "group": "通用接口", "description": "兼容 CC Switch 查询脚本和通用模板", "url": "", "auth": "custom", "extended": true }
+}

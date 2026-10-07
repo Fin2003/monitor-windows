@@ -41,5 +41,61 @@
     "license": "GPL-2.0-or-later WITH upstream IOCTL linking exception",
     "build_option": "PAWNIO_UNRESTRICTED=ON",
     "PawnPP_revision": "8caadf22f4296a545d0c40346914616e252ffe4f"
+  },
+  {
+    "project": "CC Switch extended quota queries",
+    "repository": "https://github.com/farion1231/cc-switch",
+    "revision": "f9db9f7056cbe7f972cdc02644722002316866b9",
+    "license": "MIT",
+    "files": [
+      "subscription.rs",
+      "subscription_grok.rs",
+      "balance.rs",
+      "coding_plan.rs",
+      "usage_script.rs",
+      "copilot_auth.rs"
+    ]
+  },
+  {
+    "project": "quickjs-emscripten",
+    "version": "0.32.0",
+    "repository": "https://github.com/justjake/quickjs-emscripten",
+    "license": "MIT"
+  },
+  {
+    "project": "quickjs-emscripten-core",
+    "version": "0.32.0",
+    "repository": "https://github.com/justjake/quickjs-emscripten",
+    "license": "MIT"
+  },
+  {
+    "project": "@jitl/quickjs-wasmfile-release-sync",
+    "version": "0.32.0",
+    "repository": "https://github.com/justjake/quickjs-emscripten",
+    "license": "MIT"
+  },
+  {
+    "project": "@jitl/quickjs-wasmfile-release-asyncify",
+    "version": "0.32.0",
+    "repository": "https://github.com/justjake/quickjs-emscripten",
+    "license": "MIT"
+  },
+  {
+    "project": "@jitl/quickjs-wasmfile-debug-sync",
+    "version": "0.32.0",
+    "repository": "https://github.com/justjake/quickjs-emscripten",
+    "license": "MIT"
+  },
+  {
+    "project": "@jitl/quickjs-wasmfile-debug-asyncify",
+    "version": "0.32.0",
+    "repository": "https://github.com/justjake/quickjs-emscripten",
+    "license": "MIT"
+  },
+  {
+    "project": "@jitl/quickjs-ffi-types",
+    "version": "0.32.0",
+    "repository": "https://github.com/justjake/quickjs-emscripten",
+    "license": "MIT"
   }
 ]

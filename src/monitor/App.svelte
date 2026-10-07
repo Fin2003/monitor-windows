@@ -1,5 +1,7 @@
 <script>
   import { onMount } from 'svelte';
+  import quotaCatalog from '../../electron/providers/quota-catalog.json';
+  import QuotaUsage from '../panel/components/QuotaUsage.svelte';
   import Icon from '@shared/components/Icon.svelte';
   import PageIndicator from './components/PageIndicator.svelte';
   import SystemMonitorPage from './components/SystemMonitorPage.svelte';
@@ -38,7 +40,7 @@
       const id = key.split(':')[0];
       if (!providerData[id]) continue;
       if (getProviderType(key) === 'volcengine') calibrateVolcengineCountdown(key);
-      else if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(getProviderType(key))) calibrateSimpleCountdown(key, id);
+      else if (Object.keys(quotaCatalog).filter(type => !['volcengine', 'xfyun'].includes(type)).includes(getProviderType(key))) calibrateSimpleCountdown(key, id);
 
     }
   }
@@ -74,7 +76,7 @@
 
   function isPlaceholder(key) {
     const type = getProviderType(key);
-    return type !== 'volcengine' && type !== 'xfyun' && type !== 'opencodego' && !['kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type);
+    return type !== 'volcengine' && type !== 'xfyun' && type !== 'opencodego' && !Object.hasOwn(quotaCatalog, type);
   }
 
   function hasCachedChannelData(channelKey) {
@@ -205,7 +207,7 @@
       const type = accountId.split('_')[0];
       if (type === 'volcengine' && providerData[accountId]) {
         calibrateVolcengineCountdown(key);
-      } else if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type) && providerData[accountId]) {
+      } else if (Object.keys(quotaCatalog).filter(type => !['volcengine', 'xfyun'].includes(type)).includes(type) && providerData[accountId]) {
         calibrateSimpleCountdown(key, accountId);
       }
     }
@@ -270,7 +272,7 @@
           }
           if (type === 'volcengine' && providerData[accountId]) {
             calibrateVolcengineCountdown(key);
-          } else if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type) && providerData[accountId]) {
+          } else if (Object.keys(quotaCatalog).filter(type => !['volcengine', 'xfyun'].includes(type)).includes(type) && providerData[accountId]) {
             calibrateSimpleCountdown(key, accountId);
           }
         }
@@ -323,7 +325,7 @@
             }
             return true;
           });
-        if (!sameData || !prev) {
+        if (data.dynamicQuota || !sameData || !prev) {
           providerData = { ...providerData, [providerId]: data };
         } else {
           prev._fetchTime = data._fetchTime;
@@ -343,7 +345,7 @@
             }
           }
         }
-        if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type)) {
+        if (Object.keys(quotaCatalog).filter(type => !['volcengine', 'xfyun'].includes(type)).includes(type)) {
           for (const key of trackedChannels) {
             if (getProviderType(key) === type && key.split(':')[0] === providerId) {
               calibrateSimpleCountdown(key, providerId);
@@ -484,6 +486,7 @@
       const planName = channelKey.split(':').slice(1).join(':');
 
       const plans = providerData[accountId]?.plans || [];
+    if (providerData[accountId]?.dynamicQuota) return plans.map((plan, index) => ({ key: plan.period || plan.name, label: plan.name, pct: plan.percentage, color: ringColors[index % ringColors.length], used: plan.remaining != null ? '余 ' + Number(plan.remaining).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' ' + (plan.unit || '') : plan.unlimited ? '不限量' : plan.used, infinite: plan.unlimited, countdownMs: plan.resetsAt ? Date.parse(plan.resetsAt) - countdownNow : null }));
       const plan = plans.find(p => p.name === `讯飞星火 ${planName}`);
       if (!plan || !plan.periods) return [];
 
@@ -519,7 +522,7 @@
           return { key: period.key, label: period.label, pct: plan.percentage, color: ringColors[i], countdownMs: !noSession && countdownMs > 0 ? countdownMs : null };
         }
       }
-      if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type)) {
+      if (Object.keys(quotaCatalog).filter(type => !['volcengine', 'xfyun'].includes(type)).includes(type)) {
         const plan = plans.find(p => p.name === ['滚动', '周', '月'][i]);
         if (plan && plan.percentage != null) {
           const ck = getCountdownKey(channelKey, period.key);
@@ -748,7 +751,7 @@
     return period.label;
   }
 
-  const PROVIDER_TYPE_NAMES = { kimi: 'Kimi Coding', zhipu: '智谱 GLM', minimax: 'MiniMax', zenmux: 'ZenMux', commandcode: 'Command Code', volcengine: '火山方舟', xfyun: '讯飞星火', opencodego: 'opencode Go' };
+  const PROVIDER_TYPE_NAMES = { ...Object.fromEntries(Object.entries(quotaCatalog).map(([type, item]) => [type, item.name])), kimi: 'Kimi Coding', zhipu: '智谱 GLM', minimax: 'MiniMax', zenmux: 'ZenMux', commandcode: 'Command Code', volcengine: '火山方舟', xfyun: '讯飞星火', opencodego: 'opencode Go' };
 
   function getChannelLabel(key) {
     if (providerNames[key]) return providerNames[key];
@@ -813,6 +816,8 @@
         </div>
     {:else if !isPh && !hasData}
       <div class="error-container" role="status"><div class="error-text">{providerStatus[providerId] === 'connected' ? '正在获取用量…' : '正在检查登录状态…'}</div></div>
+    {:else if providerData[providerId]?.dynamicQuota}
+      <div class="dynamic-quota"><QuotaUsage data={providerData[providerId]} /></div>
     {:else if rings.length > 0}
       {@const center = getCenterDisplay(rings, channelKey)}
       <div class="ring-container">
@@ -971,6 +976,7 @@
 </div>
 
 <style>
+  .dynamic-quota { width: 100%; max-height: 320px; overflow-y: auto; padding: 0 18px; box-sizing: border-box; }
   .monitor-shell {
     width: 100%; height: 100%; display: flex; flex-direction: column;
     background: var(--bg); overflow: hidden;

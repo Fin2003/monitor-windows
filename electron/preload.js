@@ -63,6 +63,9 @@ contextBridge.exposeInMainWorld('api', {
   getProviderProxyPort: (providerId) => ipcRenderer.invoke('get-provider-proxy-port', providerId),
   setProviderProxyPort: (providerId, port) => ipcRenderer.invoke('set-provider-proxy-port', providerId, port),
 
+  importProviderAuth: (id) => ipcRenderer.invoke('import-provider-auth', id),
+  beginCopilotLogin: (id) => ipcRenderer.invoke('begin-copilot-login', id),
+  pollCopilotLogin: (id) => ipcRenderer.invoke('poll-copilot-login', id),
   getProviderConfig: (providerId) => ipcRenderer.invoke('get-provider-config', providerId),
   setProviderConfig: (providerId, config) => ipcRenderer.invoke('set-provider-config', providerId, config),
 

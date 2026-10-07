@@ -132,7 +132,7 @@
   }
 
   function ringRadius(index, count) {
-    const step = count >= 3 ? 28 : 32;
+    const step = count > 3 ? 80 / (count - 1) : count >= 3 ? 28 : 32;
     return 112 - index * step;
   }
   function fitPost(node) {
@@ -221,7 +221,7 @@
                   {@const radius = ringRadius(ringIndex, entry.rings.length)}
                   {@const length = Math.PI * radius}
                   {@const usedLength = length * ringFraction(ring)}
-                  {@const stroke = ring.strokeWidth || 18}
+                  {@const stroke = entry.rings.length > 3 ? Math.max(4, Math.floor(72 / entry.rings.length)) : ring.strokeWidth || 18}
                   <path d={ringPath(radius)} fill="none" stroke="var(--ring-track)" stroke-width={stroke} stroke-linecap="round" />
                   {#if ring.pct !== null || ring.infinite}
                     <path d={ringPath(radius)} fill="none" stroke={ring.color || 'var(--accent)'} stroke-width={stroke} stroke-linecap="round" stroke-dasharray={`${usedLength} ${Math.max(0, length - usedLength)}`} class="ring-arc" />
