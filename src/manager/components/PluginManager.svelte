@@ -167,6 +167,12 @@
               <span class="toggle-slider"></span>
             </label>
           </div>
+          {#if plugin.id === 'coding-plan'}
+            <div class="plugin-source-links">接口实现来源：
+              <button onclick={() => window.api.openExternal('https://github.com/farion1231/cc-switch')}>CC Switch · MIT</button>
+              <span> / </span><button onclick={() => window.api.openExternal('https://github.com/Asklear/QuotaRadar')}>QuotaRadar · MIT</button>
+            </div>
+          {/if}
           <div class="plugin-actions">
             {#if providerStatus[plugin.id] === 'unauthorized'}
               <button class="action-btn accent" onclick={() => loginInPanel(plugin.id)}>
@@ -202,6 +208,8 @@
 </div>
 
 <style>
+  .plugin-source-links { font-size: 11px; color: var(--text-secondary); margin: 8px 0; }
+  .plugin-source-links button { color: var(--accent); font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
   .page { max-width: 560px; }
   .page-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
   .page-title { font-size: 22px; font-weight: 600; margin: 0; }

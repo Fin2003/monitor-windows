@@ -2,6 +2,25 @@
   "id": "coding-plan",
   "name": "Coding Plan",
   "icon": "coding",
-  "description": "追踪 Coding Plan 进度",
-  "version": "1.0.0"
+  "description": "套餐接口查询 · CC Switch / QuotaRadar (MIT)",
+  "version": "1.1.0",
+  "sources": [
+    {
+      "name": "CC Switch",
+      "url": "https://github.com/farion1231/cc-switch",
+      "revision": "d35726e28695844deaf0098450b34911f5be7b78",
+      "license": "MIT",
+      "licenseFile": "licenses/CC-Switch-MIT.txt"
+    },
+    {
+      "name": "QuotaRadar",
+      "url": "https://github.com/Asklear/QuotaRadar",
+      "license": "MIT",
+      "licenseFile": "licenses/QuotaRadar-MIT.txt",
+      "revision": "d8d020b0dd4055c5c3defc8dc7b404fc9a132fbc"
+    }
+  ],
+  "sourceName": "CC Switch / QuotaRadar",
+  "sourceUrl": "https://github.com/farion1231/cc-switch",
+  "license": "MIT adaptations; ISC application"
 }

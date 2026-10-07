@@ -1,15 +1,22 @@
 <script>
   import { onMount } from 'svelte';
   import Icon from '@shared/components/Icon.svelte';
+  import CodingPlanQuerySettings from './components/CodingPlanQuerySettings.svelte';
 
   const PROVIDER_TYPES = {
+    kimi: { name: 'Kimi Coding', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
+    zhipu: { name: '智谱 GLM', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
+    minimax: { name: 'MiniMax', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
+    zenmux: { name: 'ZenMux', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
+    commandcode: { name: 'Command Code', subtitle: 'CC Switch · MIT', description: '套餐接口用量追踪' },
     volcengine: { name: '火山方舟', subtitle: 'Volcengine ARK', description: 'Coding Plan + Agent Plan 用量追踪' },
-    opencodego: { name: 'opencode Go', subtitle: 'opencode.ai', description: '用量追踪（GitHub/Google 登录）' },
+    opencodego: { name: 'opencode Go', subtitle: 'opencode.ai', description: 'API Key 或网页登录会话接口查询' },
     xfyun: { name: '讯飞星火', subtitle: 'Xfyun Spark', description: '套餐用量追踪' },
   };
 
   let accounts = $state([]);
   let loginStatus = $state({});
+  let providerErrors = $state({});
   let planStatus = $state({});
   let confirming = $state({});
   let selectedChannels = $state([]);
@@ -271,6 +278,7 @@
       const nextXfyunPlans = { ...xfyunPlans };
       for (const p of providers) {
         next[p.id] = p.status || 'unauthorized';
+        providerErrors = { ...providerErrors, [p.id]: p.lastError || '' };
         if (p.planStatus) nextPlan[p.id] = p.planStatus;
         if (p.catalogStatus) nextCatalog[p.id] = p.catalogStatus;
         if (p.id.startsWith('xfyun')) nextXfyunPlans[p.id] = p.availablePlans || [];
@@ -520,6 +528,7 @@
   window.api?.onProviderUpdate?.(({ providerId, data, error, status, fetching, planStatus: nextPlanStatus, catalogStatus: nextCatalogStatus, availablePlans }) => {
     const next = { ...loginStatus };
     if (status) next[providerId] = status;
+    providerErrors = { ...providerErrors, [providerId]: error || '' };
     if (nextPlanStatus) planStatus = { ...planStatus, [providerId]: nextPlanStatus };
     if (nextCatalogStatus) catalogStatus = { ...catalogStatus, [providerId]: nextCatalogStatus };
     if (providerId.startsWith('xfyun') && availablePlans) {
@@ -699,6 +708,11 @@
             <option value="volcengine">火山方舟</option>
             <option value="opencodego">opencode Go</option>
             <option value="xfyun">讯飞星火</option>
+            <option value="kimi">Kimi Coding</option>
+            <option value="zhipu">智谱 GLM</option>
+            <option value="minimax">MiniMax</option>
+            <option value="zenmux">ZenMux</option>
+            <option value="commandcode">Command Code</option>
           </select>
         </div>
         <div class="dialog-row">
@@ -894,6 +908,15 @@
             </div>
           {/if}
           
+          {#if connected && !['volcengine', 'xfyun'].includes(type)}
+            <div class="plan-select">
+              <div class="plan-option" class:checked={isChannelSelected(acc.id)} data-action="toggle" data-key={acc.id}>
+                <input type="checkbox" checked={isChannelSelected(acc.id)} data-action="toggle-check" data-key={acc.id} />
+                <span class="plan-name">{getDisplayName(acc.id)}</span>
+                <button class="plan-refresh-btn" data-action="refresh-channel" data-key={acc.id} title="刷新套餐"><Icon name="refresh" size={12} /></button>
+              </div>
+            </div>
+          {/if}
           {#if connected && type === 'xfyun'}
             <div class="plan-select">
               {#each xfyunPlans[acc.id] || [] as plan}
@@ -926,28 +949,12 @@
               {/if}
             </div>
           {/if}
-          {#if type === 'volcengine'}
-            <div class="creds-section">
-              <div class="creds-header" data-action="toggle-creds" data-key={acc.id}>
-                <span class="creds-label">自动登录</span>
-                <span class="creds-hint">{credentials[acc.id]?.username ? '已保存' : '未设置'}</span>
-                <span class="creds-arrow" class:open={showCreds[acc.id]}>▸</span>
-              </div>
-              {#if showCreds[acc.id]}
-                <div class="creds-fields">
-                  <input class="cred-input" type="text" placeholder="手机号/邮箱"
-                    value={credentials[acc.id]?.username || ''}
-                    data-action="cred-input" data-provider={acc.id} data-field="username"
-                    onclick={(e) => e.stopPropagation()} />
-                  <input class="cred-input" type="password" placeholder="密码"
-                    value={credentials[acc.id]?.password || ''}
-                    data-action="cred-input" data-provider={acc.id} data-field="password"
-                    onclick={(e) => e.stopPropagation()} />
-                  <div class="creds-note">保存后登录过期时自动尝试登录</div>
-                </div>
-              {/if}
-            </div>
+          {#if type !== 'xfyun'}
+            <CodingPlanQuerySettings accountId={acc.id} {type} onverified={() => checkAuth()} />
+          {:else if type === 'xfyun'}
+            <p class="query-attribution">登录会话接口 · <button onclick={() => window.api.openExternal('https://github.com/Asklear/QuotaRadar')}>QuotaRadar · MIT</button></p>
           {/if}
+          {#if providerErrors[acc.id]}<p class="provider-error" role="status">{providerErrors[acc.id]}</p>{/if}
           {#if type === 'opencodego'}
             <div class="creds-section">
               <div class="proxy-row">
@@ -979,6 +986,9 @@
 </div>
 
 <style>
+  .provider-error { font-size: 11px; color: #eaa16b; line-height: 1.5; margin: 10px 0 0; }
+  .query-attribution { font-size: 10px; color: var(--text-secondary); margin: 10px 0; }
+  .query-attribution button { color: var(--accent-color, #76aaff); font: inherit; background: none; border: 0; cursor: pointer; }
   :root {
     --sel: #0A84FF;
     --sel-bg: rgba(10, 132, 255, 0.12);
