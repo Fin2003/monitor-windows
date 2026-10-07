@@ -2,7 +2,7 @@
 
 ## Windows EXE release
 
-Download `Monitor-Windows-1.0.5-Setup-x64.exe` from this private repository's Releases and double-click it. The one-click installer creates desktop and Start menu shortcuts and starts the application. Electron and the Windows hardware engine's .NET runtime are bundled, so the destination computer does not need Node.js, npm or .NET. Windows x64 is required. The package is unsigned.
+Download `Monitor-Windows-1.1.0-Setup-x64.exe` from this private repository's Releases and double-click it. The one-click installer creates desktop and Start menu shortcuts and starts the application. Electron and the Windows hardware engine's .NET runtime are bundled, so the destination computer does not need Node.js, npm or .NET. Windows x64 is required. The package is unsigned.
 
 The application stores its own blank profile in `%APPDATA%/monitor-windows`; sign in and configure your own keys after installation. Hardware sensor access may request UAC when the hardware plugin starts.
 
@@ -76,6 +76,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\monitor-autostart.ps
 Git 仅保存应用源码、构建脚本、依赖版本锁和必要的第三方源码及许可证。`node_modules`、工具链、构建产物、账号配置、Cookie、设备连接信息、硬件缓存和诊断报告不会提交。EXE 内的 Electron、.NET 与串口运行库是运行所需组件；安装包不附开发依赖或预置账号数据。源码 ZIP 从对应分支的 Git 文件生成。
 
 系统监控的 `third-party/hwinfo` 是 Linux 后端构建所需的 MIT 源码；ESP32 的字体 C 文件是固件构建输入。第三方许可证、字体源码和版本锁均保留。
+
+## Coding Plan 接口查询
+
+Key / AKSK 认证与用量解析改编自 [CC Switch](https://github.com/farion1231/cc-switch)，支持火山 Coding / Agent Plan、OpenCode Go、Kimi、智谱国内 / 国际版、MiniMax 国内 / 国际版、ZenMux、Command Code。火山和 OpenCode 可选择已有网页登录会话；讯飞使用 [QuotaRadar](https://github.com/Asklear/QuotaRadar) 的会话接口。插件页与查询设置均标明来源，完整 MIT 许可证随安装包提供。
+
+在账号的“接口查询”里输入自己的凭据，然后点“保存并验证”。Key 使用 Windows 系统加密，仅保存在该安装的本地配置目录，界面只回显是否已保存。火山需要账号级 AK/SK 和 Ark 用量权限；ZenMux 需要 Management API Key。认证失效、无订阅与网络 / 代理失败会显示具体原因。发布包不预置凭据、登录会话或 Workspace。
 
 ## Star 趋势
 

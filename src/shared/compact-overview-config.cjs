@@ -2,7 +2,7 @@ const PLUGIN_ID = 'compact-overview';
 
 function codingChannelKeys(slot) {
   const keys=Array.isArray(slot?.channelKeys) ? slot.channelKeys : [slot?.channelKey];
-  return [...new Set(keys.filter(key=>typeof key === 'string' && key.length<=512 && /^(volcengine|xfyun|opencodego)_[^:]+(?::.+)?$/.test(key)))];
+  return [...new Set(keys.filter(key=>typeof key === 'string' && key.length<=512 && /^(kimi|zhipu|minimax|zenmux|commandcode|volcengine|xfyun|opencodego)_[^:]+(?::.+)?$/.test(key)))];
 }
 
 function normalizeOverview(value) {

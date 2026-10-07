@@ -38,7 +38,7 @@
       const id = key.split(':')[0];
       if (!providerData[id]) continue;
       if (getProviderType(key) === 'volcengine') calibrateVolcengineCountdown(key);
-      else if (getProviderType(key) === 'opencodego') calibrateSimpleCountdown(key, id);
+      else if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(getProviderType(key))) calibrateSimpleCountdown(key, id);
       else if (getProviderType(key) === 'xfyun') {
         const plan = providerData[id].plans?.find(p => p.name === '讯飞星火 ' + key.split(':').slice(1).join(':'));
         if (plan) initXfyunCountdown(key, plan);
@@ -77,7 +77,7 @@
 
   function isPlaceholder(key) {
     const type = getProviderType(key);
-    return type !== 'volcengine' && type !== 'xfyun' && type !== 'opencodego';
+    return type !== 'volcengine' && type !== 'xfyun' && type !== 'opencodego' && !['kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type);
   }
 
   function hasCachedChannelData(channelKey) {
@@ -212,7 +212,7 @@
         const planName = key.split(':').slice(1).join(':');
         const plan = providerData[accountId].plans?.find(p => p.name === `讯飞星火 ${planName}`);
         if (plan) initXfyunCountdown(key, plan);
-      } else if (type === 'opencodego' && providerData[accountId]) {
+      } else if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type) && providerData[accountId]) {
         calibrateSimpleCountdown(key, accountId);
       }
     }
@@ -281,7 +281,7 @@
             const planName = key.split(':').slice(1).join(':');
             const plan = providerData[accountId].plans?.find(p => p.name === `讯飞星火 ${planName}`);
             if (plan) initXfyunCountdown(key, plan);
-          } else if (type === 'opencodego' && providerData[accountId]) {
+          } else if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type) && providerData[accountId]) {
             calibrateSimpleCountdown(key, accountId);
           }
         }
@@ -354,7 +354,7 @@
             }
           }
         }
-        if (type === 'opencodego') {
+        if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type)) {
           for (const key of trackedChannels) {
             if (getProviderType(key) === 'opencodego' && key.split(':')[0] === providerId) {
               calibrateSimpleCountdown(key, providerId);
@@ -623,8 +623,8 @@
           return { key: period.key, label: period.label, pct: plan.percentage, color: ringColors[i], countdownMs: !noSession && countdownMs > 0 ? countdownMs : null };
         }
       }
-      if (type === 'opencodego') {
-        const plan = plans[i];
+      if (['opencodego', 'kimi', 'zhipu', 'minimax', 'zenmux', 'commandcode'].includes(type)) {
+        const plan = plans.find(p => p.name === ['滚动', '周', '月'][i]);
         if (plan && plan.percentage != null) {
           const ck = getCountdownKey(channelKey, period.key);
           const st = countdownState[ck];
@@ -852,7 +852,7 @@
     return period.label;
   }
 
-  const PROVIDER_TYPE_NAMES = { volcengine: '火山方舟', xfyun: '讯飞星火', opencodego: 'opencode Go' };
+  const PROVIDER_TYPE_NAMES = { kimi: 'Kimi Coding', zhipu: '智谱 GLM', minimax: 'MiniMax', zenmux: 'ZenMux', commandcode: 'Command Code', volcengine: '火山方舟', xfyun: '讯飞星火', opencodego: 'opencode Go' };
 
   function getChannelLabel(key) {
     if (providerNames[key]) return providerNames[key];
