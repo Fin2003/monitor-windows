@@ -1,118 +1,103 @@
 # Monitor Windows
 
-## Windows EXE release
+**中文** · [English](README.en.md)
 
-Download `Monitor-Windows-1.1.4-Setup-x64.exe` from this repository's Releases and double-click it. The one-click installer creates desktop and Start menu shortcuts and starts the application. Electron and the Windows hardware engine's .NET runtime are bundled, so the destination computer does not need Node.js, npm or .NET. Windows x64 is required. The package is unsigned.
+Windows 副屏监控程序，集中显示 AI 额度、系统硬件数据和 Tibo 雷达，支持插件扩展。
 
-The application stores its own blank profile in `%APPDATA%/monitor-windows`; sign in and configure your own keys after installation. Hardware sensor access may request UAC when the hardware plugin starts.
+[下载安装](https://github.com/Fin2003/monitor-windows/releases/latest) · [Windows 版本](https://github.com/Fin2003/monitor-windows/tree/main) · [ESP32 版本](https://github.com/Fin2003/monitor-windows/tree/esp32) · [插件开发](docs/plugins.md)
 
-To reproduce the installer from source, run `install-dependencies.bat`, then `npm run dist:win`. The output is written to `release/`.
+## 启动
 
+### 方式一：下载 EXE，直接安装使用
 
-Windows 10/11 x64 副屏监控程序，使用 Electron、Svelte 和独立硬件采集引擎。
+**普通用户直接去 [发布页](https://github.com/Fin2003/monitor-windows/releases/latest) 下载安装包，不需要先下载源码或安装开发环境。**
 
-包含 21 类公开渠道的额度与余额面板、自定义额度查询、系统传感器、Tibo 雷达和缩略总览。
+| 使用场景 | 下载文件 |
+| --- | --- |
+| Windows 显示器／副屏 | `Monitor-Windows-版本号-Setup-x64.exe` |
+| Windows 连接 ESP32 屏幕 | `Monitor-ESP32-版本号-Setup-x64.exe` |
 
-## 一键启动
+双击安装包即可安装并创建快捷方式。安装包内置 Electron、.NET 和必要运行依赖；ESP32 版还包含串口库与触屏预览引擎。**无需另装 Node.js、npm 或 .NET。** 支持 Windows 10／11 x64；首次使用硬件监控时可能需要确认管理员权限。当前安装包尚未进行代码签名。
 
-1. 下载仓库 ZIP 并解压，或使用 Git 克隆到本地目录。
-2. 双击 **`start.bat`**。首次运行会自动执行依赖安装，构建硬件引擎和界面。
-3. 硬件监控引擎请求 UAC 时确认；管理界面以普通用户权限启动。
-4. 在管理页添加自己的账号，登录所需渠道，再启用插件。
+首次启动后，在管理页配置自己的账号、密钥和显示内容。账号登录不是使用其他无登录插件的前提。
 
-也可以先双击 **`install-dependencies.bat`**，完成安装后再启动。安装过程需要联网；缺少工具时通过 Windows `winget` 安装 Node.js LTS 和 .NET 8 SDK。建议使用 Node.js 24 LTS；最低版本为 22.12.0。
+### 方式二：源码／脚本一键启动
 
-如果系统没有 `winget`，先安装 Microsoft Store 中的 **App Installer（应用安装程序）**，或自行安装 Node.js 和 .NET SDK 后重试。批处理会保留失败信息，便于查看原因。
+下载对应分支的源码 ZIP 并解压到可写目录，双击 **`start.bat`**。首次运行会自动调用依赖安装脚本并构建界面与硬件引擎。也可先运行 **`install-dependencies.bat`**，再启动。
 
-## 初始配置
-
-- 所有 Coding Plan 渠道均需自行连接；仓库没有预置账号、密码、Cookie 或登录会话。
-- Tibo 雷达在设置中填写自己的 LLM 地址、模型和 API Key，或填写 JEV 的 API Key。开启回复辅助时，按界面提示连接自己的 X 账号。
-- 系统监控首次使用时，选择自己的硬件及传感器；显示器和布局在管理页设置。
-- 默认不注册开机自启；可通过启动任务脚本自行开启。
-
-源码版的配置、登录态和密钥存放在本目录 **`.device-profile`**；安装版使用 **`%APPDATA%\monitor-windows`**，与其他 Monitor 安装分开。Tibo LLM/JEV Key 使用 Electron `safeStorage` 保存；浏览器渠道使用各自的持久会话分区。
-
-不要将这个数据目录、浏览器 Cookie、配置导出或诊断报告上传到仓库。`.gitignore` 已排除相关文件，以及依赖、构建产物和机器运行缓存。
-
-## 开发和打包
+源码安装需要联网及 Windows 应用安装程序提供的 `winget`。脚本会按需安装 Node.js 和 .NET 8 SDK；Node.js 最低版本为 22.12.0。ESP32 源码预览还需要 CMake、Ninja 与 MSYS2 UCRT64 GCC，依赖脚本会准备这些工具。缺少 `winget` 时，可先自行安装相应开发工具。
 
 ```bat
 install-dependencies.bat
-npm run dev
-npm run pack
+start.bat
 ```
 
-`npm run pack` 在 `release\win-unpacked` 生成 Windows 程序目录；`npm run dist` 生成 Windows 安装包。硬件引擎以自包含方式发布，运行时无需另装 .NET Runtime。
+`start-clean.bat` 使用独立的空白配置目录，适合查看首次启动状态。普通源码配置位于本目录 `.device-profile`，空白启动位于 `.review-profile`；安装版使用 `%APPDATA%\monitor-windows`。这些目录保存你随后设置的内容，均不进入 Git 或发布包。
 
-源码保留插件资源和第三方许可证；Windows 构建不依赖仓库中的个人配置或预编译引擎。默认启动不会启用实验性 PawnIO 驱动，相关功能由管理页的明确操作触发。
+### 选择显示方式
 
-## 启动任务
+在“显示设置”中选择自己的 Windows 显示器、分辨率和位置，再启用所需插件。连接实体触摸屏时，请使用 [ESP32 分支](https://github.com/Fin2003/monitor-windows/tree/esp32) 及其对应安装包。
+
+已实测连接的板卡为 **Waveshare ESP32-S3-Touch-LCD-5B，5 英寸电容触摸，1024×600**。详细接口和型号区别见 [Waveshare 官方文档](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-5)；其他 ESP32 显示屏需要单独适配。
+
+## 插件开发与插件市场
+
+管理页 → **插件管理 → 插件市场**，可搜索、查看作者源码、安装／更新插件，或安装本地 ZIP。插件需要账号时，安装后在 Coding Plan 管理中填写自己的凭据。额度插件也会用于 ESP32 的现有额度页面。
+
+| 类型 | 适用版本 | 开发方式 |
+| --- | --- | --- |
+| 显示插件 | Windows | `manifest.json` 与 `index.html`，可带静态资源 |
+| 额度查询插件 | Windows、ESP32 | `manifest.json`、`quota.json` 与兼容 CC Switch 的 `query.js` |
+| ESP32 原生页面 | ESP32 | 修改 LVGL 固件和主机协议，提交代码 PR |
+
+市场索引在 `main` 分支的 [marketplace/index.json](https://github.com/Fin2003/monitor-windows/blob/main/marketplace/index.json)。两种主机读取同一索引并显示兼容范围；“市场来源”可切换到社区维护的 HTTPS 索引。
+
+作者把插件维护在自己的公开仓库，ZIP 放在自己的发布页；本仓库仅收录名称、版本、兼容范围、源码链接、下载链接和 SHA256。**任何人都可以派生仓库并提交 PR 上架／更新自己的插件**；合并后应用刷新市场即可看到，新增插件不需要重新发布 Monitor。未收录的插件也可以通过本地 ZIP 安装。
+
+查看 [中文开发与投稿文档](docs/plugins.md) 和 [示例插件](examples/plugins)。投稿不携带个人 Key、Cookie、配置、依赖目录或编译工具链。显示插件在隔离的页面中运行；额度脚本复用现有 QuickJS 查询环境，不能直接调用 Node.js 文件或进程接口。
+
+## 功能说明
+
+### 额度与余额
+
+支持 21 类公开渠道，以及社区／自定义额度接口：
+
+| 类别 | 支持渠道 |
+| --- | --- |
+| 编程套餐 | 火山方舟、OpenCode Go、讯飞星火、Kimi、智谱个人／团队、MiniMax、ZenMux、Command Code |
+| 官方订阅 | Claude、Codex、Gemini、Grok／xAI、GitHub Copilot |
+| 账户余额 | DeepSeek、阶跃星辰、硅基流动、OpenRouter、Novita |
+| 通用扩展 | New API／One API、自定义接口、社区额度查询插件 |
+
+按接口实际返回显示周期、模型额度、账户余额、单位、重置时间及更新时间。没有总额的余额显示数值，不生成虚假百分比；ESP32 的多账号／多组额度每 15 秒轮换。
+
+官方订阅可主动选择本机 CLI 登录文件，Copilot 支持设备码登录。火山可使用 AK／SK 或已有网页登录会话；讯飞使用登录会话接口。密钥通过 Windows 系统加密保存，Cookie 留在各账号本地会话中，安装包不预置账号。已进行已有账号与真实接口调试；未宣称所有渠道都用真实订阅账号逐一验证。
+
+### 系统监控、雷达与总览
+
+- 系统监控：CPU、GPU、内存及其他可用硬件传感器，可选择传感器与别名；部分数据需要管理员权限或硬件驱动支持。
+- Tibo 雷达：查看相关公开动态、额度重置线索和时间信息；在设置中填自己的 LLM／JEV 凭据，需要 X 会话的功能由用户自行登录。
+- 缩略总览：组合额度、硬件数据和雷达。Windows 支持页面轮换；ESP32 使用固定固件页面与深浅主题。
+
+### 构建安装包
 
 ```bat
-start.bat --uninstall-task
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\monitor-autostart.ps1 -Action install
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\monitor-autostart.ps1 -Action uninstall
+npm run dist:win
 ```
 
-第一条删除可选的 GUI 启动任务；后两条安装/删除可选开机自启与崩溃恢复任务 `Monitor.Windows.AutoStart`。从托盘退出会让看门狗保持关闭，手动启动或下次开机后可以重新运行。
+在完成源码依赖安装后执行，输出位于 `release`。EXE、依赖目录、编译产物、账号配置、设备连接信息、缓存和诊断报告均不提交到 Git；版本锁、必要固件字体、构建输入和许可证保留。默认不开启开机自启，相关说明见 [启动文档](docs/startup.md)。
 
-第三方软件信息见 [系统监控许可证说明](plugins/system-monitor/THIRD_PARTY_NOTICES.md)。
+## 开源协议与感谢
 
-## Windows 源码启动
+项目原创代码采用 [ISC 协议](LICENSE)，第三方组件遵循各自的许可证。完整版权、版本、源码取得方式和许可证文本见 [第三方声明](THIRD_PARTY_NOTICES.md) 及 [许可证目录](licenses)。发布页提供应用源码及必要的第三方源码／许可证附件。
 
-双击 `start.bat` 会以普通用户权限启动管理界面，硬件监控引擎按需单独提权。自启动看门狗也使用同一入口，不再调用旧的高权限 GUI 任务。
-
-## 开源协议与致谢
-
-本项目原始代码采用 [ISC 协议](LICENSE)。感谢 **LibreHardwareMonitor**、**lfreist/hwinfo**、**CapFrameX**、**PawnIO / PawnIO.Modules** 提供系统监控实现与参考。
-
-第三方组件保留原有许可证；完整版权、许可证文本、版本和源码取得方式见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。安装包带有许可证目录，Release 同时提供应用源码和第三方源码包。1.0.2 的实验性 PawnIO 驱动仅提供源码，安装包不附该实验驱动；部分新显卡的额外温度读数需要自行构建驱动。
-
-## 独立启动与发布内容
-
-双击 `start-clean.bat` 使用本目录的 `.review-profile`，便于检查首次启动状态；该目录首次运行时创建，不读取其他安装的配置。普通 `start.bat` 使用本目录的 `.device-profile`。两种入口都会保存你随后自行设置的内容，可在这些目录检查。安装版的配置目录保持独立。
-
-Git 仅保存应用源码、构建脚本、依赖版本锁和必要的第三方源码及许可证。`node_modules`、工具链、构建产物、账号配置、Cookie、设备连接信息、硬件缓存和诊断报告不会提交。EXE 内的 Electron、.NET 与串口运行库是运行所需组件；安装包不附开发依赖或预置账号数据。源码 ZIP 从对应分支的 Git 文件生成。
-
-系统监控的 `third-party/hwinfo` 是 Linux 后端构建所需的 MIT 源码；ESP32 的字体 C 文件是固件构建输入。第三方许可证、字体源码和版本锁均保留。
-
-## Coding Plan 接口查询
-
-Key / AKSK 认证与用量解析改编自 [CC Switch](https://github.com/farion1231/cc-switch)，支持火山 Coding / Agent Plan、OpenCode Go、Kimi、智谱国内 / 国际版、MiniMax 国内 / 国际版、ZenMux、Command Code。火山和 OpenCode 可选择已有网页登录会话；讯飞使用 [QuotaRadar](https://github.com/Asklear/QuotaRadar) 的会话接口。插件页与查询设置均标明来源，完整 MIT 许可证随安装包提供。
-
-在账号的“接口查询”里输入自己的凭据，然后点“保存并验证”。Key 使用 Windows 系统加密，仅保存在该安装的本地配置目录，界面只回显是否已保存。火山需要账号级 AK/SK 和 Ark 用量权限；ZenMux 需要 Management API Key。认证失效、无订阅与网络 / 代理失败会显示具体原因。发布包不预置凭据、登录会话或 Workspace。
+感谢 [CC Switch](https://github.com/farion1231/cc-switch)、[QuotaRadar](https://github.com/Asklear/QuotaRadar)、[CodexBar](https://github.com/steipete/CodexBar)、[LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)、[hwinfo](https://github.com/lfreist/hwinfo)、[CapFrameX](https://github.com/DevTechProfile/CapFrameX)、[PawnIO](https://github.com/namazso/PawnIO)、[Waveshare](https://github.com/waveshareteam)、[LVGL](https://github.com/lvgl/lvgl)、[QuickJS](https://github.com/justjake/quickjs-emscripten) 等项目提供实现、接口适配、硬件驱动与显示支持。插件分发流程参考 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) 和 [Raycast](https://developers.raycast.com/basics/publish-an-extension)。
 
 ## Star 趋势
 
-每天通过 GitHub Actions 更新；私有仓库内也可查看，无需额外配置个人 Token。
+由 [GH Star History for Actions](https://github.com/kernalix7/GH-Star-History-for-Actions) 自动更新。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/star-history/chart-dark.svg">
-  <img alt="Star History" src="docs/star-history/chart.svg" width="900">
+  <img alt="Star 趋势" src="docs/star-history/chart.svg" width="900">
 </picture>
-
-图表由 [GH Star History for Actions](https://github.com/kernalix7/GH-Star-History-for-Actions) 生成。
-
-## 额度与余额渠道
-
-渠道管理支持 21 类公开渠道：火山、OpenCode Go、讯飞、Kimi、智谱个人/团队、
-MiniMax、ZenMux、Command Code；Claude、Codex、Gemini、Grok/xAI 官方订阅与
-GitHub Copilot；DeepSeek、StepFun、SiliconFlow、OpenRouter、Novita 余额；
-New API/One API 和兼容 CC Switch 的自定义查询脚本。
-
-官方订阅使用用户主动选择的 CLI 登录文件或 OAuth Token；Copilot 支持设备码登录。
-API Key、Token、组织/项目 ID、选中的文件路径及自定义脚本使用 Windows 系统加密，
-只保存在此安装的本地配置目录。发布包不附带账号、登录文件或个人脚本。
-Gemini 自动刷新 OAuth；其他 CLI 文件由各自 CLI 更新登录后，Monitor 自动读入新值。
-
-额度管理按接口实际返回的窗口、模型、币种和次数显示全部项目；余额没有总额时显示
-实际剩余数值，不生成已用百分比。ESP32 沿用已有固件布局，多个账号/多组额度每
-15 秒轮换；无需刷写硬件。查询模式支持国内/国际版智谱、MiniMax 和 SiliconFlow。
-自定义查询使用 CC Switch 的 request/extractor 格式，支持对象或数组结果，
-QuickJS 执行环境不提供本机文件与进程接口。
-
-新增逻辑改编自 CC Switch f9db9f7056cbe7f972cdc02644722002316866b9；
-Grok 账单解析经其引用 CodexBar。完整 MIT 许可证和来源说明随安装包提供。
-已进行构建和实际应用接口调试；没有逐个提供商的订阅凭据，不将适配器支持等同于
-所有账号实测成功。未提供可查询接口的模型预设，需使用用户自己的自定义脚本。

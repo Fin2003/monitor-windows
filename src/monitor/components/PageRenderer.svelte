@@ -8,7 +8,7 @@
   {#if iframeSrc}
     <iframe
       src={iframeSrc}
-      sandbox="allow-scripts allow-same-origin"
+      sandbox={plugin.type === 'user' ? 'allow-scripts' : 'allow-scripts allow-same-origin'}
       frameborder="0"
       allowfullscreen
       title={plugin?.name || 'Plugin'}
