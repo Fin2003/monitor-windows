@@ -99,3 +99,7 @@ WebStorage/
 
 # Native preview build output
 electron/esp32/native/
+
+# Font source is fetched by scripts/prepare-ui-fonts.py
+firmware/fonts/*.otf
+firmware/fonts/*.ttf
