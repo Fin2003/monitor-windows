@@ -899,15 +899,7 @@
     </div>
   {:else}
     <div class="page-container" bind:clientWidth={containerW} bind:clientHeight={containerH}>
-      {#if currentPlugin?.id === 'clock'}
-        <div class="clock-page">
-          <div class="clock-body">
-            <div class="clock-time" id="clock-time">--:--</div>
-            <div class="clock-seconds" id="clock-seconds">00</div>
-            <div class="clock-date" id="clock-date">----</div>
-          </div>
-        </div>
-      {:else if currentPlugin?.id === 'system-monitor'}
+      {#if currentPlugin?.id === 'system-monitor'}
         <SystemMonitorPage />
       {:else if currentPlugin?.id === 'tibo-radar'}
         <TiboRadarPage />
@@ -1100,11 +1092,6 @@
   .error-icon { color: var(--warning); }
   .error-text { font-size: 16px; font-weight: 600; color: var(--warning); }
 
-  .clock-page { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-  .clock-body { display: flex; flex-direction: column; align-items: center; }
-  .clock-time { font-size: 72px; font-weight: 200; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
-  .clock-seconds { font-size: 24px; font-weight: 300; color: var(--accent); margin-top: -4px; font-variant-numeric: tabular-nums; }
-  .clock-date { font-size: 16px; color: var(--text-secondary); margin-top: 16px; }
 
   iframe { width: 100%; height: 100%; border: none; background: var(--bg); }
 </style>
