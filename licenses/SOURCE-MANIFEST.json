@@ -1,0 +1,59 @@
+[
+  {
+    "project": "LibreHardwareMonitor",
+    "repository": "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor",
+    "revision": "9837983c1d5d05b1222f3f12af3967f723ea65f4",
+    "license": "MPL-2.0",
+    "archive_sha256": "e8864ee6594e5b3def8f3a745644abc42620393134946ed943f38140bfe0a9f9"
+  },
+  {
+    "project": "BlackSharp",
+    "repository": "https://github.com/Blacktempel/BlackSharp",
+    "revision": "35f908a3d5cefaf8d4557709273d25e166593109",
+    "license": "MPL-2.0",
+    "archive_sha256": "804b00a3d77712f950cff37994e3a1abc74b0993a997a351b2116066a1e4195f"
+  },
+  {
+    "project": "DiskInfoToolkit",
+    "repository": "https://github.com/Blacktempel/DiskInfoToolkit",
+    "revision": "3c7f43001e66f478e20587f5d8e7edd8ec7e2806",
+    "license": "MPL-2.0",
+    "archive_sha256": "aabb91cc243fe2d966cd60e7317e5307c9c65a3de353e0e968c777ddb177853f"
+  },
+  {
+    "project": "RAMSPDToolkit",
+    "repository": "https://github.com/Blacktempel/RAMSPDToolkit",
+    "revision": "713038f919d85397214e17644d78534dc15a2fd2",
+    "license": "MPL-2.0",
+    "archive_sha256": "cae1fcff491477a947dfd6017884be4a325e5a88c49be37acc5e608bb1dfc8df"
+  },
+  {
+    "project": "PawnIO.Modules",
+    "repository": "https://github.com/namazso/PawnIO.Modules",
+    "revision": "0a65f31fb914914b96d175d3e461eb4824ec277a",
+    "license": "LGPL-2.1-or-later",
+    "archive_sha256": "df8e6d2612b7e8f6c48e44b14926531ba713d5e273faa0888678c1a4dc55eb60"
+  },
+  {
+    "project": "PawnIO",
+    "repository": "https://github.com/namazso/PawnIO",
+    "revision": "9d52965895588b0ffa3703b72eec75ba19f4ccc0",
+    "license": "GPL-2.0-or-later WITH upstream IOCTL linking exception",
+    "build_option": "PAWNIO_UNRESTRICTED=ON",
+    "PawnPP_revision": "8caadf22f4296a545d0c40346914616e252ffe4f"
+  },
+  {
+    "project": "LVGL",
+    "repository": "https://github.com/lvgl/lvgl",
+    "revision": "4495f428630cc1741bd8bfd977f080e8460e8e8d",
+    "license": "MIT",
+    "archive_sha256": "941745f04347ed881e65aec65fb0327bca72be5e6cc11474e4127df82ee185fd"
+  },
+  {
+    "project": "cJSON",
+    "repository": "https://github.com/DaveGamble/cJSON",
+    "revision": "c859b25da02955fef659d658b8f324b5cde87be3",
+    "license": "MIT",
+    "archive_sha256": "880a86445ad5cf38f877bac31198268d8fac5d2ce996ebf55d3066a4109ddd8d"
+  }
+]

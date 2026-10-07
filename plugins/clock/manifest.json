@@ -1,0 +1,7 @@
+{
+  "id": "clock",
+  "name": "时钟",
+  "icon": "clock",
+  "description": "简洁时钟与日期",
+  "version": "1.0.0"
+}

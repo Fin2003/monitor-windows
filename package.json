@@ -1,0 +1,139 @@
+{
+  "name": "monitor-esp32",
+  "version": "1.0.5",
+  "description": "Windows host and ESP32-S3 touchscreen monitor with Coding Plan, hardware sensors, Radar and optional light control",
+  "main": "electron/entry.js",
+  "scripts": {
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5178 && electron . --dev",
+    "dev": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron\"",
+    "build": "vite build",
+    "build:engine": "dotnet publish plugins/system-monitor/engine/SystemMonitorEngine.csproj -c Release -o plugins/system-monitor/engine/win-x64 && node scripts/stage-system-monitor-windows.js",
+    "build:engine:linux": "node scripts/build-system-monitor-linux.js",
+    "start": "electron .",
+    "build:esp32": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-esp32.ps1",
+    "pack": "npm run build:engine && npm run build:preview && npm run build && electron-builder --dir",
+    "pack:linux": "npm run build:engine:linux && npm run build && electron-builder --linux dir",
+    "dist": "npm run build:engine && npm run build && electron-builder",
+    "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-dependencies.ps1",
+    "bridge": "node scripts/esp32-bridge.cjs",
+    "dist:win": "npm run build:engine && npm run build:preview && npm run build && electron-builder --win nsis --x64 --publish never",
+    "build:preview": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-esp32-preview.ps1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "build": {
+    "npmRebuild": false,
+    "files": [
+      "dist/**",
+      "electron/**",
+      "plugins/**",
+      "scripts/esp32-encrypt-secret.cjs",
+      "scripts/esp32-radar-translation.cjs",
+      "src/shared/*.cjs",
+      "package.json",
+      "!plugins/**/*.test.*",
+      "!plugins/system-monitor/engine/bin/**",
+      "!plugins/system-monitor/engine/obj/**",
+      "!plugins/system-monitor/engine/.build/**",
+      "!plugins/system-monitor/engine/third-party/**",
+      "!plugins/system-monitor/engine/linux/**",
+      "!plugins/system-monitor/engine/*.cs",
+      "!plugins/system-monitor/engine/*.csproj",
+      "!plugins/system-monitor/engine/Resources/**",
+      "!plugins/system-monitor/runtime/*.json",
+      "!plugins/system-monitor/runtime/*.log",
+      "!**/enable-experimental-pawnio.flag",
+      "!plugins/system-monitor/engine/win-x64/**/*.pdb",
+      "!node_modules/@serialport/bindings-cpp/build/**",
+      "!**/PawnIO-unrestricted.sys",
+      "!**/.device-profile/**",
+      "!**/.review-profile/**",
+      "!**/.tools/**",
+      "!**/sensor-cache.json",
+      "!**/driver-state.json",
+      "!**/*credentials*.json",
+      "!**/*sessions*.json",
+      "!**/Cookies*",
+      "!**/Local State",
+      "!**/Cache/**",
+      "!**/Code Cache/**",
+      "!**/GPUCache/**",
+      "!**/Partitions/**",
+      "!**/Local Storage/**",
+      "!**/Session Storage/**",
+      "!**/*.bak",
+      "!**/*.log",
+      "!**/*.pdb",
+      "!electron/debug_displays.js",
+      "!electron/esp32/editor/index.html",
+      "!electron/esp32/editor/plugins.cjs",
+      "!electron/esp32/editor-server.cjs",
+      "electron/esp32/native/win-x64/MonitorEsp32Preview.exe"
+    ],
+    "asarUnpack": [
+      "plugins/system-monitor/engine/win-x64/**",
+      "plugins/system-monitor/engine/win-arm64/**",
+      "plugins/system-monitor/engine/linux-x64/**",
+      "plugins/system-monitor/engine/linux-arm64/**",
+      "electron/esp32/native/win-x64/MonitorEsp32Preview.exe"
+    ],
+    "win": {
+      "requestedExecutionLevel": "asInvoker",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "appId": "io.github.monitor.esp32",
+    "productName": "Monitor ESP32",
+    "directories": {
+      "output": "release"
+    },
+    "artifactName": "Monitor-ESP32-${version}-Setup-${arch}.${ext}",
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "extraResources": [
+      {
+        "from": "LICENSE",
+        "to": "licenses/Monitor-LICENSE.txt"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "licenses/THIRD_PARTY_NOTICES.md"
+      },
+      {
+        "from": "licenses",
+        "to": "licenses/third-party"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "concurrently": "^10.0.3",
+    "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
+    "lv_font_conv": "^1.5.3",
+    "svelte": "^5.56.4",
+    "vite": "^8.1.3",
+    "wait-on": "^9.0.10"
+  },
+  "dependencies": {
+    "serialport": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

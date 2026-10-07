@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <span class="title">MONITOR</span>
+      <span class="time" id="clock">--:--</span>
+    </div>
+
+    <div class="plan-section">
+      <div class="plan-header">
+        <span class="plan-icon">📋</span>
+        <span class="plan-name">Coding Plan</span>
+      </div>
+
+      <div class="plan-card">
+        <div class="plan-title">
+          <span class="plan-label">Sprint 3 - API Integration</span>
+          <span class="plan-percent">87%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 87%"></div>
+        </div>
+      </div>
+
+      <div class="task-list">
+        <div class="task done">
+          <div class="task-dot"></div>
+          <span class="task-name">Implement OAuth2</span>
+          <span class="task-status done-label">Done</span>
+        </div>
+        <div class="task in-progress">
+          <div class="task-dot"></div>
+          <span class="task-name">Write unit tests</span>
+          <span class="task-status in-progress-label">In Progress</span>
+        </div>
+        <div class="task">
+          <div class="task-dot"></div>
+          <span class="task-name">API documentation</span>
+          <span class="task-status">40%</span>
+        </div>
+        <div class="task">
+          <div class="task-dot"></div>
+          <span class="task-name">Performance tuning</span>
+          <span class="task-status todo-label">Todo</span>
+        </div>
+      </div>
+
+      <div class="summary">
+        Today: 5/8 tasks completed
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
