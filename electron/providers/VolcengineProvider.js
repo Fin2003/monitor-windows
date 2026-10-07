@@ -2,6 +2,7 @@ const ApiProvider = require('./CodingPlanApiProvider');
 const { QueryError, parseCoding, parseAgent, queryVolcengine, toMonitor } = require('./coding-plan-api');
 const { volcanoWeb } = require('./coding-plan-web');
 class VolcengineProvider extends ApiProvider {
+  webSessionReady = false;
   constructor(options) {
     super('volcengine', options); this.queryApiAuth = true;
     this.authType = 'api-or-session'; this.consoleUrl = 'https://console.volcengine.com/ark/region:cn-beijing/subscription/coding-plan';
@@ -26,7 +27,13 @@ class VolcengineProvider extends ApiProvider {
       return { ...toMonitor(tiers, { kind, url: this.consoleUrl }), channelOffset: kind === 'agent' ? 3 : 0 };
     } catch (error) { this.planStatus[kind] = 'error'; this.lastError = error.message; if (error.kind === 'auth') this.status = 'unauthorized'; throw error; }
   }
-  async fetchData() {
+  async fetchData(scraper) {
+    // The console refreshes session-only CSRF cookies after an application restart.
+    if (!this.isDirectAuth() && !this.webSessionReady) {
+      await scraper.loadPage(this.consoleUrl);
+      await scraper.waitForNetworkIdle(8000);
+      this.webSessionReady = true;
+    }
     const results = await Promise.allSettled([this.query('coding'), this.query('agent')]);
     const authError = results.find(r => r.status === 'rejected' && r.reason.kind === 'auth');
     if (authError) throw authError.reason;

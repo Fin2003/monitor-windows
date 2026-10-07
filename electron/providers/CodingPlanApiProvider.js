@@ -11,7 +11,7 @@ class CodingPlanApiProvider extends BaseProvider {
   setConfig(config) { this.config = config || {}; }
   isDirectAuth() { return true; }
   async checkAuth(scraper) {
-    try { await this.fetchData(scraper); this.status = 'connected'; return { status: this.status }; }
+    try { const data = await this.fetchData(scraper); this.status = 'connected'; return { status: this.status, data }; }
     catch (error) { this.lastError = error.message; this.status = error.kind === 'auth' ? 'unauthorized' : 'error'; return { status: this.status, error: error.message }; }
   }
   async fetchData() {

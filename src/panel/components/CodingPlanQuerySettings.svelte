@@ -41,7 +41,9 @@
       </select>
     </label>
   {/if}
-  {#if type === 'volcengine'}
+  {#if sessionTypes.includes(type) && mode === 'web'}
+    <p>在账号的连接窗口登录，完成后会自动验证套餐接口，无需填写 Key。</p>
+  {:else if type === 'volcengine'}
     <label>AccessKey ID<input type="password" bind:value={accessKeyId} autocomplete="off" placeholder={config.hasAccessKeyId ? '已加密保存；留空保留' : '账号级 AccessKey ID'} /></label>
     <label>Secret Access Key<input type="password" bind:value={secretAccessKey} autocomplete="off" placeholder={config.hasSecretAccessKey ? '已加密保存；留空保留' : '账号级 Secret Access Key'} /></label>
     <p>使用账号级 AK/SK 和 Ark 用量查询权限。模型推理 Key 不适用。</p>
