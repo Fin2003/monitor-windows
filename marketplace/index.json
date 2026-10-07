@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "id": "github-api-quota",
+      "name": "示例 · GitHub 接口额度",
+      "description": "读取 GitHub API 剩余额度与重置时间，无 Token 也可使用。",
+      "version": "1.0.0",
+      "minAppVersion": "1.2.0",
+      "kind": "quota",
+      "targets": [
+        "windows",
+        "esp32"
+      ],
+      "author": "Monitor contributors",
+      "repository": "https://github.com/Fin2003/monitor-windows/tree/main/examples/plugins/github-api-quota",
+      "license": "ISC",
+      "icon": "coding",
+      "defaultEnabled": false,
+      "requiresAuth": false,
+      "downloadUrl": "https://github.com/Fin2003/monitor-windows/releases/download/v1.2.0/github-api-quota-1.0.0.zip",
+      "sha256": "750a07077b8768a7d2e340e52f92cccd2ba3fe100b892dc19b03168bcd8c3443"
+    },
+    {
+      "id": "hello-monitor",
+      "name": "示例 · 显示插件入门",
+      "description": "独立静态页面，展示插件加载状态和当前视口尺寸。",
+      "version": "1.0.0",
+      "minAppVersion": "1.2.0",
+      "kind": "display",
+      "targets": [
+        "windows"
+      ],
+      "author": "Monitor contributors",
+      "repository": "https://github.com/Fin2003/monitor-windows/tree/main/examples/plugins/hello-monitor",
+      "license": "ISC",
+      "icon": "monitor",
+      "defaultEnabled": false,
+      "requiresAuth": false,
+      "downloadUrl": "https://github.com/Fin2003/monitor-windows/releases/download/v1.2.0/hello-monitor-1.0.0.zip",
+      "sha256": "5b189096c500df8f4f5ca726723ecba2e75dcb0973ef606f9b8d49ce0083c879"
+    }
+  ]
+}

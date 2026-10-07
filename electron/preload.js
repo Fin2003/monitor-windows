@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('api', {
 
 
   getPlugins: () => ipcRenderer.invoke('get-plugins'),
+  listPluginMarketplace: () => ipcRenderer.invoke('plugin-marketplace-list'),
+  installMarketplacePlugin: id => ipcRenderer.invoke('plugin-marketplace-install', id),
+  installLocalPluginZip: () => ipcRenderer.invoke('plugin-marketplace-local'),
+  setPluginMarketplaceSource: url => ipcRenderer.invoke('plugin-marketplace-source', url),
   getTiboRadar: () => ipcRenderer.invoke('tibo-radar-get'),
   getTiboModel: () => ipcRenderer.invoke('tibo-model-get'),
   saveTiboModel: (value) => ipcRenderer.invoke('tibo-model-save', value),

@@ -22,14 +22,14 @@ class PluginManager {
     for (const cfg of config) {
       const disk = diskPlugins.find(d => d.id === cfg.id);
       if (disk) {
-        merged.push({ ...disk, ...cfg });
+        merged.push({ ...cfg, ...disk, enabled: disk.kind === 'quota' ? false : cfg.enabled, duration: cfg.duration || 10 });
         seen.add(cfg.id);
       }
     }
 
     for (const disk of diskPlugins) {
       if (!seen.has(disk.id)) {
-        merged.push({ ...disk, enabled: disk.defaultEnabled !== false, duration: 10 });
+        merged.push({ ...disk, enabled: disk.kind === 'quota' ? false : disk.defaultEnabled !== false, duration: 10 });
       }
     }
 
@@ -59,14 +59,14 @@ class PluginManager {
         const manifestPath = path.join(pluginPath, 'manifest.json');
         const htmlPath = path.join(pluginPath, 'index.html');
 
-        if (!fs.existsSync(htmlPath)) continue;
-
         let manifest = { id: entry.name, name: entry.name, icon: '📄' };
         if (fs.existsSync(manifestPath)) {
           try {
             manifest = { ...manifest, ...JSON.parse(fs.readFileSync(manifestPath, 'utf8')) };
           } catch (_) {}
         }
+
+        if (!fs.existsSync(htmlPath) && manifest.kind !== 'quota') continue;
 
         plugins.push({
           id: manifest.id || entry.name,
@@ -77,6 +77,10 @@ class PluginManager {
           htmlPath,
           description: manifest.description || '',
           version: manifest.version || '1.0.0',
+          kind: manifest.kind || 'display',
+          providerId: manifest.kind === 'quota' ? 'custom_' + manifest.id : null,
+          author: manifest.author || '',
+          repository: manifest.repository || '',
           defaultEnabled: manifest.defaultEnabled !== false,
           managerEntry: manifest.managerEntry || '',
            sourceName: manifest.sourceName || '',
@@ -94,14 +98,22 @@ class PluginManager {
 
     const manifestPath = path.join(pluginPath, 'manifest.json');
     const htmlPath = path.join(pluginPath, 'index.html');
-    if (!fs.existsSync(htmlPath)) return { error: 'No index.html found' };
-
     let manifest = { id: path.basename(pluginPath) };
     if (fs.existsSync(manifestPath)) {
       manifest = { ...manifest, ...JSON.parse(fs.readFileSync(manifestPath, 'utf8')) };
     }
 
+    const {validateManifest} = require('../src/shared/plugin-catalog.cjs');
+    if (!/^[a-z][a-z0-9-]{1,63}$/.test(manifest.id)) return {error: '插件 ID 格式不正确'};
+    if (['coding-plan','system-monitor','tibo-radar','compact-overview','light-control'].includes(manifest.id)) return {error: '不能替换内置插件'};
+    if (manifest.kind === 'quota') {
+      validateManifest(manifest);
+      JSON.parse(fs.readFileSync(path.join(pluginPath, 'quota.json'), 'utf8'));
+      if (!fs.readFileSync(path.join(pluginPath, 'query.js'), 'utf8').trim()) return {error: '缺少额度查询脚本'};
+    } else if (!fs.existsSync(htmlPath)) return {error: 'No index.html found'};
+
     const targetDir = path.join(this.#pluginsDir, manifest.id);
+    if (!path.resolve(targetDir).startsWith(path.resolve(this.#pluginsDir) + path.sep)) return {error: '插件目录超出本地数据范围'};
     if (fs.existsSync(targetDir)) {
       fs.rmSync(targetDir, { recursive: true, force: true });
     }
@@ -114,6 +126,7 @@ class PluginManager {
     const plugins = this.getPluginList();
     const plugin = plugins.find(p => p.id === pluginId);
     if (!plugin) return { error: 'Plugin not found' };
+    if (plugin.type === 'builtin' || !path.resolve(plugin.path).startsWith(path.resolve(this.#pluginsDir) + path.sep)) return {error: '只能移除用户安装的插件'};
 
     if (fs.existsSync(plugin.path)) {
       fs.rmSync(plugin.path, { recursive: true, force: true });
