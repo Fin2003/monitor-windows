@@ -244,7 +244,7 @@
     <label>显示时区 <select value={data.config.displayTimeZone || 'Asia/Shanghai'} onchange={e => configure({ displayTimeZone: e.currentTarget.value })}>{#each Object.entries(DISPLAY_TIME_ZONES) as [zone,label]}<option value={zone}>{label}</option>{/each}</select></label>
     <label><input type="checkbox" checked={data.config.paused} onchange={e => configure({ paused: e.currentTarget.checked })}>暂停后台检查</label>
     <p>待补全 {data.meta.backlog || 0}</p>
-    {#if data.meta.modelEnabled}<p>待判断 {data.meta.analysisPending || 0}</p>{/if}
+    {#if data.meta.modelEnabled}<p>待判断 {data.meta.analysisPending || 0}</p>{:else}<p>内置规则识别 · 配置 AI 后可分析复杂预告</p>{/if}
     {#if syncIssue}<p class="warning">{syncIssue}</p>{/if}
     {#if analysisIssue}<p class="warning">{analysisIssue}</p>{/if}
   </section>
@@ -253,7 +253,7 @@
   <div class="dialog-heading"><h2>帖子原文</h2><button class="icon" title="关闭原文" aria-label="关闭原文" onclick={() => postDialog.close()}><Icon name="close" size={25} /></button></div>
   {#if expandedPost}
     <p class="post-meta">@thsottiaux · {date(expandedPost.publishedAt)}</p>
-    {#if expandedPost.source === 'llm'}<p class="post-meta">LLM · {expandedPost.banked ? 'Banked' : { forecast: '预告', completion: '完成', mention: '提及', irrelevant: '普通帖' }[expandedPost.kind]}</p>{:else if expandedPost.source === 'pending'}<p class="post-meta">待判断</p>{/if}
+    {#if expandedPost.source === 'llm'}<p class="post-meta">LLM · {expandedPost.banked ? 'Banked' : { forecast: '预告', completion: '完成', mention: '提及', irrelevant: '普通帖' }[expandedPost.kind]}</p>{:else if expandedPost.source === 'rules'}<p class="post-meta">内置规则 · 原文明确公告</p>{:else if expandedPost.source === 'pending'}<p class="post-meta">待判断</p>{/if}
     {#if expandedPost.source === 'jev' && expandedPost.jev}
       <section class="jev-review" aria-label="JEV 判断">
         <strong>JEV</strong>
