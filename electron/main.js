@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, session, shell } = require('electron');
+require('./app-icon.cjs');
 const path = require('path');
 const fs = require('fs');
 const url = require('url');
