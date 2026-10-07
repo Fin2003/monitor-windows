@@ -1,6 +1,6 @@
 {
   "name": "monitor-esp32",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Windows host and ESP32-S3 touchscreen monitor with Coding Plan, hardware sensors, Radar and optional light control",
   "main": "electron/entry.js",
   "scripts": {

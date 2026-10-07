@@ -40,8 +40,9 @@ async function requestJson(url, options = {}, request = (...args) => require('el
   const remoteError = body.ResponseMetadata?.Error || body.Error;
   if (remoteError) {
     const code = String(remoteError.Code || 'UnknownError');
-    const auth = /signature|accesskey|accessdenied|denied|unauthorized|forbidden|credential|token/i.test(code);
-    throw new QueryError(auth ? 'AK/SK 无效或缺少 Ark 用量查询权限（' + code + '）' : '火山接口错误（' + code + '）', auth ? 'auth' : 'api');
+    const auth = /signature|accesskey|accessdenied|denied|unauthorized|forbidden|credential|token|notlogin/i.test(code);
+    const session = new URL(url).hostname === 'console.volcengine.com';
+    throw new QueryError(auth ? (session ? '火山登录会话验证失败（' : 'AK/SK 无效或缺少 Ark 用量查询权限（') + code + '）' : '火山接口错误（' + code + '）', auth ? 'auth' : 'api');
   }
   if (!response.ok) throw new QueryError('用量接口请求失败（HTTP ' + response.status + '）');
   return body;

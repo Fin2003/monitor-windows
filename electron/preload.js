@@ -88,7 +88,6 @@ contextBridge.exposeInMainWorld('api', {
 
   getCountdownCache: () => ipcRenderer.invoke('get-countdown-cache'),
   saveCountdownCache: (cache) => ipcRenderer.invoke('save-countdown-cache', cache),
-  appendXfyunLog: (text) => ipcRenderer.invoke('append-xfyun-log', text),
 
   onDisplayConfig: (callback) => {
     ipcRenderer.on('display-config', (_event, data) => callback(data));

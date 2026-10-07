@@ -21,12 +21,6 @@ class ProviderManager {
     this.#configStore = store;
   }
 
-  #getCredentials(providerId) {
-    if (!this.#configStore) return null;
-    const creds = this.#configStore.get('providerCredentials') || {};
-    return creds[providerId] || null;
-  }
-
   setMonitorWindow(win) {
     this.#monitorWindow = win;
   }
@@ -166,7 +160,7 @@ class ProviderManager {
     try {
       const result = await provider.checkAuth(scraper);
       if (result.status === 'connected') await this.#captureLoginInfo(providerId, scraper);
-      this.#sendUpdate(providerId);
+      this.#sendUpdate(providerId, result.data);
       return result;
     } catch (e) {
       console.error(`[ProviderManager] checkAuth ${providerId} error:`, e.message);
@@ -215,232 +209,47 @@ class ProviderManager {
     return { success: true };
   }
 
-  async login(providerId, credentials = null) {
+  async login(providerId) {
     const provider = this.#providers.get(providerId);
     if (!provider) return { error: 'Provider not found' };
     if (this.#providerFetching.get(providerId)) return { success: false, error: '正在处理此账号，请稍后重试' };
     this.#providerFetching.set(providerId, true);
-
     const scraper = this.#getOrCreateScraper(providerId);
     scraper.stopLoginWatch();
-
     try {
-      if (provider.queryApiAuth) {
-        const result = await provider.checkAuth(scraper);
-        this.#sendUpdate(providerId, null, result.error || null);
-        if (result.status === 'connected') {
-          this.#sendUpdate(providerId, await provider.fetchData(scraper));
-          scraper.hideLoginWindows(); return { success: true, status: 'connected' };
-        }
-        if (provider.isDirectAuth()) return { success: false, status: result.status, error: result.error };
-        await scraper.loadPage(provider.consoleUrl); scraper.showWindow(); provider.status = 'waiting';
-        this.#sendUpdate(providerId); return { needsBrowser: true };
-      }
-      scraper.showWindow();
-
-      await scraper.reloadPage(provider.consoleUrl);
-      await scraper.waitForNetworkIdle(8000);
-      await scraper.executeScript(() => new Promise(r => setTimeout(r, 2000)));
-
-      const needsLogin = provider.readLoginState
-        ? (await scraper.executeScript(provider.readLoginState)) !== 'connected'
-        : await scraper.executeScript(() => {
-        const url = window.location.href;
-        const text = document.body.innerText;
-        return !!(
-          document.querySelector('input[type="password"]') ||
-          url.includes('/login') ||
-          url.includes('passport') ||
-          text.includes('立即登录使用') ||
-          text.includes('请先登录')
-        );
-      });
-
-      if (!needsLogin) {
-        scraper.hideWindow();
-
-        provider.status = 'connected';
+      const result = await provider.checkAuth(scraper);
+      if (result.status === 'connected') {
+        this.#sendUpdate(providerId, result.data || await provider.fetchData(scraper));
         await this.#captureLoginInfo(providerId, scraper);
-        this.#sendUpdate(providerId);
-
-        try {
-          const data = await provider.fetchData(scraper);
-          this.#sendUpdate(providerId, data);
-        } catch (e) {
-          console.error(`[ProviderManager] fetchData error:`, e.message);
-          this.#sendUpdate(providerId, null, e.message);
-          if (provider.status === 'unauthorized') return { success: false, status: 'unauthorized', error: e.message };
-        }
-
+        scraper.hideLoginWindows();
         return { success: true, status: 'connected' };
       }
-
-      if (!credentials) {
-        credentials = this.#getCredentials(providerId);
+      if (provider.isDirectAuth?.()) {
+        this.#sendUpdate(providerId, null, result.error);
+        return { success: false, status: result.status, error: result.error };
       }
-
-      if (!provider.skipAutoLogin && credentials && credentials.username && credentials.password) {
-        const autoResult = await this.#autoLogin(scraper, provider, credentials);
-        if (autoResult.success) {
-          scraper.hideWindow();
-          provider.status = 'connected';
-          await this.#captureLoginInfo(providerId, scraper);
-          this.#sendUpdate(providerId);
-          try {
-            const data = await provider.fetchData(scraper);
-            this.#sendUpdate(providerId, data);
-          } catch (e) {
-            console.error(`[ProviderManager] fetchData after auto-login error:`, e.message);
-            this.#sendUpdate(providerId, null, e.message);
-            if (provider.status === 'unauthorized') return { success: false, status: 'unauthorized', error: e.message };
-          }
-          return { success: true, status: 'connected', autoLogin: true };
-        }
-        try { console.error(`[ProviderManager] auto-login failed for ${providerId}: ${autoResult.reason}`); } catch(_) {}
-      }
-
-      if (provider.readLoginState) {
+      await scraper.loadPage(provider.consoleUrl);
+      scraper.showWindow(); provider.status = 'waiting'; provider.lastError = null;
+      this.#sendUpdate(providerId);
+      const complete = () => this.confirmLogin(providerId);
+      const expired = () => {
+        if (provider.status !== 'waiting') return;
+        provider.status = 'unauthorized';
+        this.#sendUpdate(providerId, null, '登录等待已结束，请重新连接');
+      };
+      if (provider.queryApiAuth) scraper.watchQueryLogin(async () => {
+        const result = await provider.checkAuth(scraper);
+        if (result.status === 'connected') return true;
         provider.status = 'waiting';
-        this.#sendUpdate(providerId);
-        scraper.watchLogin(provider.readLoginState, async () => {
-          await this.confirmLogin(providerId);
-        }, () => {
-          if (provider.status !== 'waiting') return;
-          provider.status = 'unauthorized';
-          this.#sendUpdate(providerId, null, '登录等待已结束，请重新连接');
-        });
-      }
-      return { success: false, needsBrowser: true, message: '请在弹出的窗口中登录' };
-    } catch (e) {
-      console.error(`[ProviderManager] login ${providerId} error:`, e.message);
+        return false;
+      }, complete, expired);
+      else scraper.watchLogin(provider.readLoginState, complete, expired);
+      return { needsBrowser: true };
+    } catch (error) {
       provider.status = 'error';
-      this.#sendUpdate(providerId, null, e.message);
-      return { success: false, error: e.message };
-    } finally {
-      this.#providerFetching.delete(providerId);
-    }
-  }
-
-  async #autoLogin(scraper, provider, credentials) {
-    try {
-      await scraper.loadPage(provider.loginUrl);
-      await scraper.waitForNetworkIdle(8000);
-      await scraper.executeScript(() => new Promise(r => setTimeout(r, 2000)));
-
-      const switched = await scraper.executeScript(() => {
-        const tabs = document.querySelectorAll('[role="tab"], .tab, [class*="tab"], [class*="Tab"], span, div, a, button');
-        for (const tab of tabs) {
-          const text = (tab.textContent || '').trim();
-          if (text === '账号登录' || text === '账号密码登录' || text === '密码登录') {
-            tab.click();
-            return true;
-          }
-        }
-        return false;
-      });
-
-      if (switched) {
-        await scraper.executeScript(() => new Promise(r => setTimeout(r, 1500)));
-      }
-
-      const filled = await scraper.executeScript((user, pass) => {
-        const inputs = document.querySelectorAll('input');
-        let usernameInput = null;
-        let passwordInput = null;
-        for (const input of inputs) {
-          const rect = input.getBoundingClientRect();
-          if (input.disabled || input.readOnly || rect.width <= 0 || rect.height <= 0) continue;
-          const type = (input.type || '').toLowerCase();
-          const placeholder = (input.placeholder || '').toLowerCase();
-          const name = (input.name || '').toLowerCase();
-          const autocomplete = (input.autocomplete || '').toLowerCase();
-          const id = (input.id || '').toLowerCase();
-          if (type === 'password' || name.includes('pass') || autocomplete.includes('password')) {
-            passwordInput = input;
-          } else if (type === 'text' || type === 'tel' || type === 'email' || type === '') {
-            if (placeholder.includes('账号') || placeholder.includes('邮箱') || placeholder.includes('用户名') ||
-                placeholder.includes('手机号') || placeholder.includes('手机') ||
-                name.includes('user') || name.includes('account') || name.includes('phone') ||
-                id.includes('user') || id.includes('account') || id.includes('phone') ||
-                autocomplete.includes('username') || autocomplete.includes('email')) {
-              usernameInput = input;
-            }
-          }
-        }
-        if (!usernameInput) {
-          const visible = Array.from(document.querySelectorAll('input')).filter(inp => {
-            const rect = inp.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0 && !inp.disabled && !inp.readOnly &&
-              ['text', 'tel', 'email', ''].includes(inp.type);
-          });
-          if (visible.length > 0) usernameInput = visible[0];
-        }
-        if (!usernameInput || !passwordInput) return { ok: false, debug: `u=${!!usernameInput} p=${!!passwordInput}` };
-
-        const nativeInputSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        nativeInputSetter.call(usernameInput, user);
-        usernameInput.dispatchEvent(new Event('input', { bubbles: true }));
-        usernameInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-        nativeInputSetter.call(passwordInput, pass);
-        passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-        passwordInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-        return { ok: true };
-      }, credentials.username, credentials.password);
-
-      if (!filled.ok) {
-        return { success: false, reason: `could not find login form fields: ${filled.debug}` };
-      }
-
-      await scraper.executeScript(() => new Promise(r => setTimeout(r, 1000)));
-
-      const clicked = await scraper.executeScript(() => {
-        const buttons = document.querySelectorAll('button, input[type="submit"], [role="button"]');
-        for (const btn of buttons) {
-          const rect = btn.getBoundingClientRect();
-          if (btn.disabled || rect.width <= 0 || rect.height <= 0) continue;
-          const text = (btn.textContent || btn.value || '').trim();
-          if (text === '登录' || text === '登 录' || text === 'Login' || text === 'Sign in' || text === '提交') {
-            btn.click();
-            return true;
-          }
-        }
-        return false;
-      });
-
-      if (!clicked) {
-        return { success: false, reason: 'could not find login button' };
-      }
-
-      await scraper.waitForNetworkIdle(15000);
-      await scraper.executeScript(() => new Promise(r => setTimeout(r, 3000)));
-
-      const loggedIn = provider.readLoginState
-        ? (await scraper.executeScript(provider.readLoginState)) === 'connected'
-        : await scraper.executeScript(() => {
-        const url = window.location.href;
-        const text = document.body.innerText;
-        if (text.includes('用户名或密码不匹配') || text.includes('账号或密码错误') ||
-            text.includes('密码错误') || text.includes('登录失败') || text.includes('验证码错误')) {
-          return false;
-        }
-        return !(
-          document.querySelector('input[type="password"]') ||
-          url.includes('/login') ||
-          url.includes('passport') ||
-          text.includes('立即登录使用') ||
-          text.includes('请先登录')
-        );
-      });
-
-      if (loggedIn) {
-        return { success: true };
-      }
-      return { success: false, reason: 'login did not succeed (wrong credentials or captcha)' };
-    } catch (e) {
-      return { success: false, reason: e.message };
-    }
+      this.#sendUpdate(providerId, null, error.message);
+      return { success: false, error: error.message };
+    } finally { this.#providerFetching.delete(providerId); }
   }
 
   async confirmLogin(providerId) {
@@ -460,7 +269,7 @@ class ProviderManager {
         this.#sendUpdate(providerId);
 
         try {
-          const data = await provider.fetchData(scraper);
+          const data = result.data || await provider.fetchData(scraper);
           this.#sendUpdate(providerId, data);
         } catch (e) {
           console.error(`[ProviderManager] fetchData after confirm error:`, e.message);
@@ -1196,27 +1005,11 @@ class ProviderManager {
         provider.status = 'connected';
         await this.#captureLoginInfo(id, scraper);
         scraper.signal.throwIfAborted();
-        const cachedData = cache[id]?.data || null;
+        const cachedData = result.data || cache[id]?.data || null;
         this.#sendUpdate(id, cachedData);
         await this.#fetchProviderChannels(id, provider, scraper);
       } else {
         this.#sendUpdate(id, null, result.error || null);
-        const creds = this.#getCredentials(id);
-        if (!provider.skipAutoLogin && creds && creds.username && creds.password) {
-          try {
-            const autoResult = await this.#autoLogin(scraper, provider, creds);
-            scraper.signal.throwIfAborted();
-            try { console.error(`[DEBUG] checkAuthOnStartup ${id}: autoLogin success=${autoResult?.success} reason=${autoResult?.reason}`); } catch(_) {}
-            if (autoResult.success) {
-              provider.status = 'connected';
-              await this.#captureLoginInfo(id, scraper);
-              scraper.signal.throwIfAborted();
-              this.#sendUpdate(id);
-              await this.#fetchProviderChannels(id, provider, scraper);
-              return;
-            }
-          } catch (_) {}
-        }
         scraper.releaseWindow();
       }
     } catch (e) {
@@ -1282,6 +1075,18 @@ class ScraperSession {
 
   hideLoginWindows() {
     for (const win of this.#loginWindows()) win.hide();
+  }
+
+  watchQueryLogin(probe, complete, expired) {
+    this.stopLoginWatch();
+    this.#loginObserver = new LoginObserver({
+      interval: 3000,
+      probe: async () => {
+        if (!this.hasActiveWindow()) { this.stopLoginWatch(); expired(); return false; }
+        return probe();
+      }, complete, expired,
+    });
+    this.#loginObserver.start();
   }
 
   watchLogin(readState, complete, expired) {
