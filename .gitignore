@@ -1,0 +1,89 @@
+# Dependencies and generated builds
+node_modules/
+dist/
+release/
+out/
+**/bin/
+**/obj/
+**/.build/
+plugins/system-monitor/engine/win-*/
+plugins/system-monitor/engine/linux-*/
+plugins/system-monitor/engine/probe-*/
+plugins/system-monitor/engine/linux/build/
+
+# Local research, screenshots and diagnostic exports
+.planning/
+reports/
+PLAN.md
+findings.md
+progress.md
+task_plan.md
+NVIDIA Corporation/
+scripts/*-result.json
+
+# API keys, credentials, sessions and browser profiles
+.env
+.env.*
+!.env.example
+.npmrc
+config.json*
+*credentials*.json*
+*sessions*.json*
+tibo-radar-model.json*
+tibo-radar-jev.json*
+tibo-radar-state.json*
+tibo-radar-manual-resets.json*
+userData/
+userdata/
+profiles/
+Partitions/
+Network/
+Cache/
+Code Cache/
+GPUCache/
+Local Storage/
+Session Storage/
+Local State
+Preferences
+Cookies*
+Login Data*
+*.db
+*.sqlite*
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Machine-specific runtime state (keep runtime JavaScript)
+plugins/system-monitor/runtime/*.json
+plugins/system-monitor/runtime/*.log
+plugins/system-monitor/runtime/*.flag
+plugins/system-monitor/runtime/cleanup-stale-electron
+autostart.quit
+autostart.paused
+*.log
+*.bak
+*.bak-*
+*.tmp
+*.dmp
+*.pdb
+*.user
+.vs/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local toolchains and isolated launch profiles
+.tools/
+.device-profile/
+.review-profile/
+.cache/
+artifacts/
+*.tsbuildinfo
+Crashpad/
+Service Worker/
+DawnCache/
+DawnGraphiteCache/
+DawnWebGPUCache/
+WebStorage/

@@ -1,0 +1,120 @@
+/* Design tokens shared with the ESP32 screen (firmware/monitor-5b/main/monitor_theme.c in
+   monitor-esp32): one neutral palette, semantic accents, 16/12/20 px grid, one type family. */
+:root {
+  --surface: #181C20;
+  --surface-2: #202428;
+  --text-3: #687078;
+  --blue: #4C9AFF;
+  --violet: #9D8CFF;
+  --amber: #FFB23F;
+  --orange: #FF8A4C;
+  --green: #3ECF8E;
+  --red: #FF6B66;
+  --cyan: #3CC8DC;
+
+  --bg: #080C10;
+  --bg-secondary: var(--surface);
+  --card: var(--surface);
+  --card-hover: var(--surface-2);
+  --text-primary: #F0F4F8;
+  --text-secondary: #98A0A8;
+  --accent: var(--blue);
+  --accent-hover: #6EAEFF;
+  --success: var(--green);
+  --warning: var(--amber);
+  --danger: var(--red);
+  --border: #283038;
+  --ring-track: var(--surface-2);
+  --radius-card: 16px;
+  --radius-btn: 10px;
+  --radius-sm: 6px;
+  --gap: 12px;
+  --pad: 20px;
+  --font-main: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+}
+
+:root[data-theme="light"] {
+  --surface: #FFFFFF;
+  --surface-2: #E8ECF0;
+  --text-3: #889098;
+  --blue: #1D6FE0;
+  --violet: #6B55D6;
+  --amber: #B26A00;
+  --orange: #C4551B;
+  --green: #138A55;
+  --red: #D2383C;
+  --cyan: #0B7F90;
+
+  --bg: #F0F4F8;
+  --text-primary: #101418;
+  --text-secondary: #586068;
+  --accent-hover: #1558B8;
+  --border: #D8DCE0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  font-size: 14px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--text-primary);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s;
+}
+button:active {
+  transform: scale(0.97);
+}

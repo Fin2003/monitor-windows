@@ -1,0 +1,39 @@
+cmake_minimum_required(VERSION 3.22)
+
+project(SystemMonitorEngineLinux LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(HWINFO_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}/hwinfo")
+if (SYSTEM_MONITOR_ARCH)
+    set(SYSTEM_MONITOR_ARCH "${SYSTEM_MONITOR_ARCH}")
+elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
+    set(SYSTEM_MONITOR_ARCH "arm64")
+else()
+    set(SYSTEM_MONITOR_ARCH "x64")
+endif()
+
+set(HWINFO_SHARED OFF CACHE BOOL "" FORCE)
+set(HWINFO_STATIC ON CACHE BOOL "" FORCE)
+set(HWINFO_OS OFF CACHE BOOL "" FORCE)
+set(HWINFO_MAINBOARD OFF CACHE BOOL "" FORCE)
+set(HWINFO_CPU ON CACHE BOOL "" FORCE)
+set(HWINFO_DISK ON CACHE BOOL "" FORCE)
+set(HWINFO_RAM ON CACHE BOOL "" FORCE)
+set(HWINFO_GPU ON CACHE BOOL "" FORCE)
+set(HWINFO_GPU_OPENCL OFF CACHE BOOL "" FORCE)
+set(HWINFO_BATTERY OFF CACHE BOOL "" FORCE)
+set(HWINFO_NETWORK OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(../third-party/hwinfo hwinfo-build EXCLUDE_FROM_ALL)
+
+add_executable(SystemMonitorEngine SystemMonitorEngine.cpp)
+target_compile_options(SystemMonitorEngine PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(SystemMonitorEngine PRIVATE lfreist-hwinfo::hwinfo)
+
+set_target_properties(SystemMonitorEngine PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../linux-${SYSTEM_MONITOR_ARCH}"
+)
