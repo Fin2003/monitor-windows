@@ -7,6 +7,7 @@ class CodingPlanApiProvider extends BaseProvider {
     this.icon = 'coding'; this.authType = 'api'; this.skipAutoLogin = true;
     this.authStore = authStore; this.request = request || ((...args) => require('electron').session.fromPartition('persist:' + this.id).fetch(...args)); this.source = SOURCE; this.config = {}; this.queryApiAuth = true;
     this.consoleUrl = TYPES[type].url; this.loginUrl = this.consoleUrl; this.lastError = null;
+    if (TYPES[type].extended) this.source = require('./quota-extended').SOURCE;
   }
   setConfig(config) { this.config = config || {}; }
   isDirectAuth() { return true; }
@@ -16,6 +17,11 @@ class CodingPlanApiProvider extends BaseProvider {
   }
   async fetchData() {
     try {
+      if (TYPES[this.type].extended) {
+        const { queryExtended, toQuotaMonitor } = require('./quota-extended');
+        const data = toQuotaMonitor(await queryExtended(this), this.config.baseUrl || this.consoleUrl);
+        this.lastError = null; this.status = 'connected'; return data;
+      }
       const data = await queryKey(this.type, this.config, this.authStore.read(this.id), this.request);
       this.lastError = null; this.status = 'connected';
       return { ...toMonitor(data.tiers, { url: this.consoleUrl }), planName: data.plan };
