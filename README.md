@@ -2,7 +2,7 @@
 
 ## Windows EXE release
 
-Download `Monitor-Windows-1.1.3-Setup-x64.exe` from this private repository's Releases and double-click it. The one-click installer creates desktop and Start menu shortcuts and starts the application. Electron and the Windows hardware engine's .NET runtime are bundled, so the destination computer does not need Node.js, npm or .NET. Windows x64 is required. The package is unsigned.
+Download `Monitor-Windows-1.1.4-Setup-x64.exe` from this repository's Releases and double-click it. The one-click installer creates desktop and Start menu shortcuts and starts the application. Electron and the Windows hardware engine's .NET runtime are bundled, so the destination computer does not need Node.js, npm or .NET. Windows x64 is required. The package is unsigned.
 
 The application stores its own blank profile in `%APPDATA%/monitor-windows`; sign in and configure your own keys after installation. Hardware sensor access may request UAC when the hardware plugin starts.
 
@@ -11,7 +11,7 @@ To reproduce the installer from source, run `install-dependencies.bat`, then `np
 
 Windows 10/11 x64 副屏监控程序，使用 Electron、Svelte 和独立硬件采集引擎。
 
-包含 Coding Plan 额度面板（火山引擎、讯飞、OpenCode Go）、系统传感器、Tibo 雷达、时钟和缩略总览。
+包含 21 类公开渠道的额度与余额面板、自定义额度查询、系统传感器、Tibo 雷达和缩略总览。
 
 ## 一键启动
 
