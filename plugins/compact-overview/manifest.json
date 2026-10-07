@@ -1,0 +1,8 @@
+{
+  "id": "compact-overview",
+  "name": "缩略总览",
+  "icon": "plugin",
+  "version": "1.0.0",
+  "defaultEnabled": false,
+  "description": "Coding Plan · 系统监控 · Tibo 雷达"
+}

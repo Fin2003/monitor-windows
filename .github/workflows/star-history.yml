@@ -1,0 +1,53 @@
+name: Star History
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  watch:
+    types: [started]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: star-history
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: [main, esp32]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.branch }}
+      - name: Generate private repository chart
+        uses: kernalix7/GH-Star-History-for-Actions@da01690be72156bf3c7a7e0077c215e25d9080c7
+        with:
+          github-token: ${{ github.token }}
+          output-directory: docs/star-history
+      - name: Keep charts without personal avatars
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          folder = Path('docs/star-history')
+          for file in folder.glob('*.svg'):
+              if file.name not in {'chart.svg', 'chart-dark.svg'}:
+                  file.unlink()
+                  continue
+              svg = re.sub(r'<image\b[^>]*/>', '', file.read_text(), flags=re.S)
+              file.write_text('\n'.join(line.rstrip() for line in svg.splitlines()) + '\n')
+      - name: Save aggregate history and charts
+        env:
+          CHART_BRANCH: ${{ matrix.branch }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/star-history
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'docs: update star history [skip ci]'
+          git push origin "HEAD:$CHART_BRANCH"

@@ -1,0 +1,44 @@
+{
+  "id": "system-monitor",
+  "name": "系统监控",
+  "icon": "system-monitor",
+  "description": "跨平台硬件监控：Windows 使用 LibreHardwareMonitor，Linux 使用 hwinfo",
+  "version": "1.1.1",
+  "managerEntry": "system-monitor-panel.html",
+  "sourceName": "LibreHardwareMonitor/LibreHardwareMonitor",
+  "sourceUrl": "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor",
+  "license": "MPL-2.0",
+  "platforms": ["win-x64", "linux-x64"],
+  "sources": [
+    {
+      "name": "LibreHardwareMonitor/LibreHardwareMonitor",
+      "url": "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor",
+      "license": "MPL-2.0",
+      "role": "Windows 完整传感器与控制后端"
+    },
+    {
+      "name": "lfreist/hwinfo",
+      "url": "https://github.com/lfreist/hwinfo",
+      "license": "MIT",
+      "role": "Linux 基础硬件信息与 CPU/RAM/磁盘监控后端"
+    },
+    {
+      "name": "CapFrameX",
+      "url": "https://github.com/CXWorld/CapFrameX",
+      "license": "MIT",
+      "role": "NVIDIA 热点读取适配参考"
+    },
+    {
+      "name": "PawnIO",
+      "url": "https://github.com/namazso/PawnIO",
+      "license": "GPL-2.1（特殊例外）",
+      "role": "Windows 可选直读模块驱动"
+    },
+    {
+      "name": "PawnIO.Modules",
+      "url": "https://github.com/namazso/PawnIO.Modules",
+      "license": "LGPL-2.1-or-later",
+      "role": "Windows 直读模块来源"
+    }
+  ]
+}

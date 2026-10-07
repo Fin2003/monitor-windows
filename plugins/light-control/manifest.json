@@ -1,0 +1,8 @@
+{
+  "id": "light-control",
+  "name": "ESP 灯光控制",
+  "version": "1.0.0",
+  "backend": "backend.cjs",
+  "description": "复用三灯协议，通过 Monitor 现有 USB 链路控制 5B 自带 ESP32 蓝牙。",
+  "port": 47833
+}
