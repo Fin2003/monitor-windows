@@ -4,7 +4,7 @@ const { calendarWindow, timingRank, compatible } = require('./forecast-window.cj
 const RESET = /\breset(?:s|ting|ed|ing)?\b/i;
 const BANKED = /\bbanked\b|\breset credits?\b|\breset tokens?\b/i;
 const NEGATIVE = /\b(?:not|never|haven't|hasn't|didn't|won't|will not|no)\b.{0,30}\b(?:reset|done|propagated|completed)\b|\breset\b.{0,25}\b(?:not|isn't)\b.{0,15}\b(?:done|complete|propagated)\b/i;
-const COMPLETE = /\b(?:have|has|had|just|already|now|(?:i|we|they|you)['’]ve)\s+(?:been\s+)?reset\b|\b(?:limits?|usage|accounts?)\s+(?:have\s+been\s+|has\s+been\s+|are\s+|is\s+)?reset\b|\b(?:reset|all)\s+(?:has\s+been\s+|have\s+been\s+|is\s+|all\s+)?propagated\b|\ball reset\b|\b(?:it(?:['’]s| is)|reset is)\s+(?:done|complete|completed|live)\b|\breset\s+(?:is\s+)?(?:done|completed)\b/i;
+const COMPLETE = /\breset\s+(?:has\s+been|is|was)\s+processed\b|\b(?:have|has|had|just|already|now|(?:i|we|they|you)['’]ve)\s+(?:been\s+)?reset\b|\b(?:limits?|usage|accounts?)\s+(?:have\s+been\s+|has\s+been\s+|are\s+|is\s+)?reset\b|\b(?:reset|all)\s+(?:has\s+been\s+|have\s+been\s+|is\s+|all\s+)?propagated\b|\ball reset\b|\b(?:it(?:['’]s| is)|reset is)\s+(?:done|complete|completed|live)\b|\breset\s+(?:is\s+)?(?:done|completed)\b/i;
 const FORECAST = /\b(?:will|going to|plan to|planning to|scheduled|landing|lands|tomorrow|tonight|midnight)\b|\bin\s+(?:~\s*)?(?:\d+|one|two|three)\s+hours?\b/i;
 
 function laParts(ms) {
@@ -88,7 +88,7 @@ function classify(post, contextHasReset = false) {
   return { kind, banked, eta: kind === 'forecast' ? estimate(text, post.publishedAt, banked) : null, keyText: (keys.length ? keys : lines).join('\n') };
 }
 
-function buildState(posts, now = Date.now(), { useLLM = false } = {}) {
+function buildState(posts, now = Date.now(), { useLLM = false, allowRules = false } = {}) {
   const valid = posts.filter(p => p.author?.toLowerCase() === 'thsottiaux' && p.id && Number.isFinite(p.publishedAt));
   const map = new Map(valid.map(p => [p.id, p]));
   function ancestors(post) {
@@ -106,7 +106,8 @@ function buildState(posts, now = Date.now(), { useLLM = false } = {}) {
   const decorated = valid.map(p => {
     const parents = ancestors(p);
     const classification = { ...(useLLM
-      ? p.analysis || { kind: RESET.test(p.text) ? 'mention' : 'irrelevant', banked: false, eta: null, keyText: p.text, source: 'pending' }
+      ? p.analysis || (allowRules ? { ...classify(p, parents.some(q => RESET.test(q.text))), source: 'rules' }
+        : { kind: RESET.test(p.text) ? 'mention' : 'irrelevant', banked: false, eta: null, keyText: p.text, source: 'pending' })
       : classify(p, parents.some(q => RESET.test(q.text)))) };
     // Only generic acknowledgements inherit context, not explicit usage resets.
     const resetParent = parents.find(q => RESET.test(q.text));

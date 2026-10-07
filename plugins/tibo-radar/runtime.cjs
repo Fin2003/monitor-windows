@@ -154,8 +154,15 @@ class TiboRadar {
     return { parents, replies, fingerprint: semantic.fingerprint(post, parents, INPUT_MODEL, 7, replies) };
   }
 
+  modelEnabled() {
+    const provider = this.config().analysisProvider;
+    const model = provider === 'jev' ? this.jev?.get() : this.model?.get();
+    return !!(model?.baseUrl && model?.model && (provider !== 'jev' || model.hasApiKey));
+  }
+
   snapshot() {
     const config = this.config();
+    const modelEnabled = this.modelEnabled();
     const activeModel = config.analysisProvider === 'jev' ? this.jev?.get() : this.model?.get();
     const manual = manualResets.load(this.manualFile);
     const posts = [...this.posts.values(), ...manualResets.syntheticPosts(manual)].filter(post => config.repliesEnabled || !post.replyToId).map(post => {
@@ -165,10 +172,10 @@ class TiboRadar {
         hour: post.jev.hour?.supported ? { ...post.jev.hour, estimatedAt: jevDecision.estimatedAt(post.jev.hour.candidate) } : post.jev.hour } : null;
       return { ...post, analysis, jev };
     });
-    const state = buildState(posts, Date.now(), { useLLM: true });
+    const state = buildState(posts, Date.now(), { useLLM: true, allowRules: !modelEnabled });
     return { ...state, config, manual: manualResets.pickerInfo({ radar: state, timeZone: displayTimeZone(config.displayTimeZone), list: manual }),
-      meta: { ...this.meta, modelEnabled: !!(activeModel?.baseUrl && activeModel?.model && (config.analysisProvider !== 'jev' || activeModel.hasApiKey)), modelName: activeModel?.model || '',
-        analysisPending: posts.filter(post => semantic.candidate(post) && !post.analysis).length,
+      meta: { ...this.meta, modelEnabled, analysisMode: modelEnabled ? config.analysisProvider : 'rules', modelName: activeModel?.model || '',
+        analysisPending: modelEnabled ? posts.filter(post => semantic.candidate(post) && !post.analysis).length : 0,
         analysisProvider: config.analysisProvider, running: this.running, fetching: !!this.job,
         nextPollAt: this.nextPollAt || null, storedPosts: posts.length, backlog: this.pendingIds.size } };
   }
@@ -434,6 +441,7 @@ class TiboRadar {
   }
 
   async analyzePending(generation = this.generation) {
+    if (!this.modelEnabled()) return;
     let count = 0;
     const batchStarted = Date.now();
     for (const post of [...this.posts.values()].sort((a, b) => b.publishedAt - a.publishedAt)) {
