@@ -38,6 +38,21 @@ Source profiles are `.device-profile`; `start-clean.bat` uses a separate `.revie
 
 Choose your own Windows monitor, resolution and position in **Display settings**, then enable the desired plugins. For a physical ESP32 display, use the [esp32 branch](https://github.com/Fin2003/monitor-windows/tree/esp32) and its installer. Connectivity and display output have been verified on **Waveshare ESP32-S3-Touch-LCD-5B**, a 5-inch 1024×600 capacitive touchscreen. See [official documentation](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-5); other boards need their own port.
 
+
+### First-time ESP32 setup
+
+**Flash the screen firmware first, then install the Windows ESP32 EXE.** Download the matching `Monitor-ESP32-VERSION-firmware-5B.zip` and ESP32 installer from [Releases](https://github.com/Fin2003/monitor-windows/releases/latest). The firmware ZIP includes binaries and `flash-firmware.bat`; no compilation is needed. It targets Waveshare ESP32-S3-Touch-LCD-5B / 1024×600.
+
+Follow the [step-by-step setup guide](docs/esp32-setup.en.md), including a copyable AI setup prompt. Firmware source and flash scripts live on the `esp32` branch; compiled binaries are distributed through Releases.
+
+### Screen theme and image background
+
+Use the dark/light controls beside **Screen preview** on ESP32, or **Display settings → Screen theme and background** on Windows. The screen theme is independent of the management UI.
+
+Choose PNG, JPEG, WebP or BMP, replace it or clear it. Images are center-cropped to 1024×600, with translucent cards for readability. They remain in the user's local profile, without the original path or metadata, and are not uploaded to the marketplace, Git or Releases.
+
+The ESP32 receives a 512×300 RGB565 image and scales it to the panel to fit available PSRAM. This is not original-resolution photo rendering. The host resends it after reconnecting; no image is written to board flash. Physical image backgrounds need the new `monitor-native-0.16.0-background` firmware. Update both the host and board firmware to fix theme reversion and enable images. Installing the host EXE does not automatically flash a board.
+
 ## Plugin development and marketplace
 
 Open **Plugin manager → Marketplace** to search, inspect source, install/update a plugin, or install a local ZIP. Configure your own credentials in Coding Plan management when a quota plugin needs them. Quota plugins feed the ESP32's existing quota pages as well.
@@ -97,7 +112,9 @@ Thanks to [CC Switch](https://github.com/farion1231/cc-switch), [QuotaRadar](htt
 
 Updated by [GH Star History for Actions](https://github.com/kernalix7/GH-Star-History-for-Actions).
 
+![GitHub Stars](https://img.shields.io/github/stars/Fin2003/monitor-windows?style=flat&label=Stars)
+
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/star-history/chart-dark.svg">
-  <img alt="Star history" src="docs/star-history/chart.svg" width="900">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Fin2003/monitor-windows/main/docs/star-history/chart-dark.svg?v=a0ec11cf7179cc99">
+  <img alt="Star history" src="https://raw.githubusercontent.com/Fin2003/monitor-windows/main/docs/star-history/chart.svg?v=94d3782c9958f006" width="900">
 </picture>

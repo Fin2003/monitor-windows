@@ -87,3 +87,7 @@ DawnCache/
 DawnGraphiteCache/
 DawnWebGPUCache/
 WebStorage/
+
+# User-selected screen images
+screen-background.png
+screen-background.rgb565

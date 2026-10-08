@@ -356,6 +356,11 @@ function setupIPC() {
     }));
   });
 
+  app.screenAppearance = new (require('./screen-appearance.cjs').ScreenAppearance)(configStore);
+  ipcMain.handle('screen-appearance-get', () => app.esp32Backend ? {...app.screenAppearance.get(), theme:app.esp32Backend.status().frame.prefs.dark ? 'dark' : 'light'} : app.screenAppearance.render());
+  ipcMain.handle('screen-theme-set', (_event, theme) => app.screenAppearance.theme(theme));
+  ipcMain.handle('screen-background-choose', () => app.screenAppearance.choose(managerWindow));
+  ipcMain.handle('screen-background-clear', () => app.screenAppearance.clear());
   ipcMain.handle('get-config', () => {
     return configStore.getAll();
   });
