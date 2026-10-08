@@ -35,7 +35,7 @@ ESP32 是运行屏幕程序的设备，Windows 是发送数据的主机。**先�
 4. 在预览标题旁切换深色／亮色，或选择图片背景。鼠标点击／拖动预览可模拟触屏；实体屏也可以直接操作。
 5. 图片由 Windows 本地保存并在每次连接后发送到板卡 RAM；断开主机或板卡重启后需要重新连接才能恢复图片。图片以 512×300 RGB565 传输，再放大至 1024×600。
 
-本次 `monitor-native-0.16.0-background` 固件与 1.3.1 主机同时修复了主题状态回报覆盖新设置的问题。设置写入 Flash 改由内部内存任务执行，避免板卡重启；背景采用逐块确认传输。管理界面主题与屏幕主题分别设置。
+本次 `monitor-native-0.16.1-banked` 固件与 1.3.1 主机同时修复了主题状态回报覆盖新设置的问题。设置写入 Flash 改由内部内存任务执行，避免板卡重启；背景采用逐块确认传输。管理界面主题与屏幕主题分别设置。
 
 ## 连接失败时
 
@@ -46,15 +46,20 @@ ESP32 是运行屏幕程序的设备，Windows 是发送数据的主机。**先�
 
 ## 可复制给 AI 的安装提示词
 
+把下面这段交给能操作本机终端的 AI：
+
 ```text
-请手把手协助我在 Windows 10/11 x64 安装 Fin2003/monitor-windows 的 ESP32 版本。
+请直接在我的 Windows 10/11 x64 电脑上安装 Monitor ESP32，不要只给教程或命令。
 仓库：https://github.com/Fin2003/monitor-windows/tree/esp32
+下载：https://github.com/Fin2003/monitor-windows/releases/latest
 指南：https://github.com/Fin2003/monitor-windows/blob/esp32/docs/esp32-setup.md
-设备是 Waveshare ESP32-S3-Touch-LCD-5B，1024×600，16MB Flash / 8MB PSRAM。
-先帮助我下载同一 Release 的 firmware-5B.zip 与 ESP32 Setup EXE。
-确认设备型号和我拔插后识别出的 COM 端口，再使用固件包的 flash-firmware.bat。
-不要默认端口、不要整片擦除、不要修改其他串口设备。
-刷写成功后安装 EXE，连接 USB Serial/JTAG，检查实际屏幕和预览、深浅主题以及图片背景。
-账号和图片由我在本机自行配置，不要要求我在对话里提供 API Key 或 Cookie。
-每一步等我反馈实际现象，报错时根据原始报错继续处理。
+设备：Waveshare ESP32-S3-Touch-LCD-5B，1024×600，16MB Flash / 8MB PSRAM。
+下载同一次发布的 ESP32 Setup EXE、firmware-5B.zip 和 SHA256SUMS.txt，核对校验值并解压。
+自动安装刷机需要的 Python 3 和 esptool；使用包内 flash-firmware.bat，沿用它的独立依赖环境。
+识别这块屏幕的 USB Serial/JTAG 串口。多个候选或型号不明确时请我拔插确认，不要猜端口或操作其他设备。
+型号和端口确认后，关闭占用该端口的程序，执行刷写并为脚本输入 FLASH；确认写入校验成功。
+安装并启动 ESP32 EXE，自动连接屏幕，检查设备在线、实体显示、鼠标触屏预览与深浅主题。
+无需编译源码或整片擦除。权限窗口、BOOT/RESET 等物理操作需要我配合时再提示我。
+账号由我在应用中自行配置，不读取或上传我已有的浏览器 Cookie、登录文件和 API Key。
+遇到错误请根据实际日志继续处理，最后报告安装版本、所用端口和连接结果。
 ```
