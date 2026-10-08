@@ -50,7 +50,7 @@ function radarState(snapshot, now = Date.now()) {
     label = '监测中';
     kind = 'active';
   }
-  return { label, kind, issue, issueLabel, stale,
+  return { label, kind, issue, issueLabel, stale, overviewLabel:kind === 'warning' || kind === 'error' ? '检查设置' : '',
     latestAt: finiteNumber(snapshot?.recentReset?.publishedAt ?? snapshot?.latest?.publishedAt),
     latestType: snapshot?.recentReset?.type || (snapshot?.latest ? 'Hard' : '') };
 }
@@ -133,7 +133,8 @@ function latestRadarPosts(snapshot) {
 
 function postPresentation(post) {
   const excerpt = radarPostExcerpt(post.text || post.keyText || '');
-  if (post.banked) return { label: 'Banked +1', tone: 'banked', category: 'banked', excerpt };
+  if (post.banked) return { label:({credited:'Banked +1',confirmation:'Banked 确认',announcement:'Banked 预告',timing:'时间补充',related:'Banked 相关'})[post.bankedRole] || 'Banked 相关',
+    tone:post.bankedCredit ? 'banked' : post.bankedRole === 'announcement' ? 'forecast' : 'ordinary', category:'banked', excerpt };
   if (!post.resetRelated) return { label: '', tone: 'ordinary', category: 'all', excerpt };
   if (post.kind === 'completion') return { label: '重置完成', tone: 'completed', category: 'reset', excerpt };
   if (post.superseded) return { label: '', tone: 'ordinary', category: 'reset', excerpt };

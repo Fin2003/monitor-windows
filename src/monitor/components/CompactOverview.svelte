@@ -267,8 +267,8 @@
               <img src={avatar} alt="Tibo" />
               <strong>Tibo 雷达</strong>
             </div>
-            <span class="status-badge" title={radarView.status.issue || radarView.status.label} class:error={radarView.status.kind === 'error'} class:warning={radarView.status.kind === 'warning'}>
-              <i title={radarView.status.label}></i><span>{radarView.status.label}</span>
+            <span class="status-badge" title={radarView.status.overviewLabel || "雷达状态"} class:error={radarView.status.kind === 'error'} class:warning={radarView.status.kind === 'warning'}>
+              <i></i><span>{radarView.status.overviewLabel}</span>
             </span>
           </div>
 
