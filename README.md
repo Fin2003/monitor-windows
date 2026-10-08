@@ -2,6 +2,8 @@
 
 **中文** · [English](README.en.md)
 
+**版本：** [Windows（main）](https://github.com/Fin2003/monitor-windows/tree/main) · [ESP32（esp32）](https://github.com/Fin2003/monitor-windows/tree/esp32)
+
 在 Windows 副屏上显示 AI 额度、硬件数据和 Tibo 雷达。
 
 ## 启动
