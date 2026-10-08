@@ -26,20 +26,26 @@ For a Monitor update with the same partition layout, use `flash-firmware.bat -Ap
 
 Install the ESP32 Setup EXE, start it, and choose Auto connect on the ESP32 screen page. Select a port manually if multiple devices exist. Configure your own accounts and sensors in the app. The board receives display data; it does not need your account keys.
 
-Use the controls next to the preview title for dark/light mode and image backgrounds. Mouse clicks and drags simulate touch. Images remain in your Windows profile and are sent to board RAM on connection, at 512×300 RGB565 scaled to 1024×600. Reconnect after a board restart to restore the image. Firmware `monitor-native-0.16.0-background` and host 1.3.1 fix stale theme reports overwriting a new selection and move flash saves to an internal-RAM task. Background transfer waits for an acknowledgment for each block.
+Use the controls next to the preview title for dark/light mode and image backgrounds. Mouse clicks and drags simulate touch. Images remain in your Windows profile and are sent to board RAM on connection, at 512×300 RGB565 scaled to 1024×600. Reconnect after a board restart to restore the image. Firmware `monitor-native-0.16.1-banked` and host 1.3.1 fix stale theme reports overwriting a new selection and move flash saves to an internal-RAM task. Background transfer waits for an acknowledgment for each block.
 
 If no port appears, check the data cable and USB interface; hold BOOT while connecting and release it as described by Waveshare. For a stuck Connecting message, close serial apps, enter BOOT mode, retry, and press RESET afterwards. If the app is offline after flashing, confirm the native USB Serial/JTAG interface and close other Monitor instances.
 
 ## Prompt for AI-assisted setup
 
+Give this to an AI that can operate your local terminal:
+
 ```text
-Guide me through installing the ESP32 version of Fin2003/monitor-windows on Windows 10/11 x64.
-Read https://github.com/Fin2003/monitor-windows/blob/esp32/docs/esp32-setup.en.md.
-My board is Waveshare ESP32-S3-Touch-LCD-5B, 1024x600, 16MB flash / 8MB PSRAM.
-Download firmware-5B.zip and the ESP32 Setup EXE from the same Release.
-Identify MY screen's COM port by unplugging/replugging, then use flash-firmware.bat.
-Do not assume a port, erase the entire chip, or touch other devices.
-After flashing, install the EXE and connect USB Serial/JTAG. Check the physical screen, preview, themes and background.
-I will configure accounts locally; do not ask me to send API keys or cookies in chat.
-Wait for my result at each step and troubleshoot using the actual error message.
+Install Monitor ESP32 directly on my Windows 10/11 x64 computer; execute the setup rather than only giving instructions.
+Repository: https://github.com/Fin2003/monitor-windows/tree/esp32
+Downloads: https://github.com/Fin2003/monitor-windows/releases/latest
+Guide: https://github.com/Fin2003/monitor-windows/blob/esp32/docs/esp32-setup.en.md
+Board: Waveshare ESP32-S3-Touch-LCD-5B, 1024x600, 16MB flash / 8MB PSRAM.
+Download the ESP32 Setup EXE, firmware-5B.zip and SHA256SUMS.txt from the same release, verify the checksums and extract the firmware.
+Install Python 3 and esptool as needed, using the bundled flash-firmware.bat and its isolated dependency environment.
+Identify this screen's USB Serial/JTAG port. Ask me to unplug/replug if multiple ports or an uncertain board model prevent identification; do not guess or touch other devices.
+Once the board and port are identified, close software using that port, run the flash script and supply FLASH at its prompt; confirm successful write verification.
+Install and launch the ESP32 EXE, connect the screen and check online status, physical display, mouse-driven touch preview and dark/light themes.
+Do not compile source or erase the entire chip. Ask for my help only when elevation prompts or physical BOOT/RESET actions require it.
+I will configure accounts in the app; do not read or upload my existing browser cookies, login files or API keys.
+Resolve errors using the actual logs, then report the installed versions, selected port and connection result.
 ```
