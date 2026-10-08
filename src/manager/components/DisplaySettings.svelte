@@ -1,5 +1,6 @@
 <script>
   import Icon from '@shared/components/Icon.svelte';
+  import ScreenAppearance from '@shared/components/ScreenAppearance.svelte';
 
   let { onconfigchanged } = $props();
 
@@ -425,13 +426,15 @@
       <label class="toggle-row highlight">
         <div class="toggle-label">
           <span>{theme === 'dark' ? '深色模式' : '亮色模式'}</span>
-          <span class="toggle-desc">切换界面主题，同步应用到所有窗口</span>
+          <span class="toggle-desc">切换管理界面主题</span>
         </div>
         <button class="theme-toggle" onclick={toggleTheme}>
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
         </button>
       </label>
     </section>
+
+    <section class="section"><h3>屏幕主题与背景</h3><ScreenAppearance /></section>
 
     <section class="section">
       <div class="mode-card">

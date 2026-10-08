@@ -44,6 +44,8 @@
 
     }
   }
+  let screenBackground = $state(''), screenThemeOverride = false;
+  function applyAppearance(value) { screenBackground = value.image || ''; currentTheme = value.theme; screenThemeOverride = true; document.documentElement.setAttribute('data-theme', currentTheme); }
   let currentTheme = $state('dark');
 
   function darkenColor(hex, factor = 0.72) {
@@ -184,6 +186,7 @@
       if (savedPageIndex >= 0) currentPageIndex = savedPageIndex;
       const theme = config.theme || 'dark';
       currentTheme = theme;
+      applyAppearance(await window.api.getScreenAppearance());
       document.documentElement.setAttribute('data-theme', theme);
       displayMode = config.displayMode || 'single';
       activeProvider = config.activeProvider || 'volcengine_0';
@@ -249,7 +252,9 @@
 
     window.api.onDisplayConfig((config) => { if (!overviewPreview) displayConfig = config; });
 
+    window.api.onScreenAppearanceChange(applyAppearance);
     window.api.onThemeChange((theme) => {
+      if (screenThemeOverride) return;
       currentTheme = theme;
       document.documentElement.setAttribute('data-theme', theme);
     });
@@ -885,7 +890,9 @@
   </div>
 {/snippet}
 
-<div class="monitor-shell"
+<div class="monitor-shell" class:has-background={!!screenBackground}
+  style:background-image={screenBackground ? `url("${screenBackground}")` : 'none'}
+  style:background-size="cover" style:background-position="center"
   style:transform={displayConfig?.needsRotation ? 'rotate(90deg)' : 'none'}
   style:transform-origin={displayConfig?.needsRotation ? 'top left' : 'none'}
   style:width={displayConfig?.needsRotation ? `${displayConfig.height}px` : '100%'}
@@ -969,6 +976,8 @@
 
 <style>
   .dynamic-quota { width: 100%; max-height: 320px; overflow-y: auto; padding: 0 18px; box-sizing: border-box; }
+  .monitor-shell.has-background { --card: rgba(24,28,32,.86); --bg: transparent; }
+  :global([data-theme="light"]) .monitor-shell.has-background { --card: rgba(255,255,255,.86); }
   .monitor-shell {
     width: 100%; height: 100%; display: flex; flex-direction: column;
     background: var(--bg); overflow: hidden;

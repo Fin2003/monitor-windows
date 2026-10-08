@@ -40,6 +40,21 @@ start.bat
 
 已实测连接的板卡为 **Waveshare ESP32-S3-Touch-LCD-5B，5 英寸电容触摸，1024×600**。详细接口和型号区别见 [Waveshare 官方文档](https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-5)；其他 ESP32 显示屏需要单独适配。
 
+
+### ESP32 首次刷机与安装
+
+**先刷屏幕固件，再安装 Windows ESP32 EXE。** 在 [Release](https://github.com/Fin2003/monitor-windows/releases/latest) 下载同版本的 `Monitor-ESP32-版本号-firmware-5B.zip` 与 ESP32 安装包；固件 ZIP 包含二进制和 `flash-firmware.bat`，无需自行编译。适配 Waveshare ESP32-S3-Touch-LCD-5B / 1024×600。
+
+按照 [手把手安装指南](docs/esp32-setup.md) 完成串口辨认、刷机、自动连接、主题与图片设置；指南还提供可复制给 AI 的安装提示词。固件源码与刷写脚本放在 `esp32` 分支，编译产物仅在 Release，避免依赖和二进制占满仓库。
+
+### 屏幕主题与图片背景
+
+ESP32 版在“屏幕预览”标题旁切换深色／亮色，Windows 版在“显示设置 → 屏幕主题与背景”中设置。屏幕主题独立于管理界面主题。
+
+点击“图片背景”选择 PNG、JPEG、WebP 或 BMP；图片居中裁切适配 1024×600，可更换或清除。实体屏与原生预览一起显示，卡片保留半透明底色以便阅读。背景只保存在使用者自己的配置目录，不携带原文件路径或图片元数据，也不会上传到市场、Git 或 Release。
+
+ESP32 图片在传输时转换为 512×300 RGB565，由屏幕放大显示，以适应剩余 PSRAM；不保证照片具有原始分辨率。图片由主机在重新连接时发送，不写入板卡闪存。实体图片背景需要本次新增的 `monitor-native-0.16.0-background` 固件；为了修复主题闪回并启用图片，主机和板卡固件均应更新。主机 EXE 更新不会自动刷板。
+
 ## 插件开发与插件市场
 
 管理页 → **插件管理 → 插件市场**，可搜索、查看作者源码、安装／更新插件，或安装本地 ZIP。插件需要账号时，安装后在 Coding Plan 管理中填写自己的凭据。额度插件也会用于 ESP32 的现有额度页面。
@@ -97,7 +112,9 @@ npm run dist:win
 
 由 [GH Star History for Actions](https://github.com/kernalix7/GH-Star-History-for-Actions) 自动更新。
 
+![GitHub Stars](https://img.shields.io/github/stars/Fin2003/monitor-windows?style=flat&label=Stars)
+
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/star-history/chart-dark.svg">
-  <img alt="Star 趋势" src="docs/star-history/chart.svg" width="900">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Fin2003/monitor-windows/main/docs/star-history/chart-dark.svg?v=a0ec11cf7179cc99">
+  <img alt="Star 趋势" src="https://raw.githubusercontent.com/Fin2003/monitor-windows/main/docs/star-history/chart.svg?v=94d3782c9958f006" width="900">
 </picture>
