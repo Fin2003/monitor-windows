@@ -2,6 +2,8 @@
 
 [中文](README.md) · **English**
 
+**Edition:** [Windows (main)](https://github.com/Fin2003/monitor-windows/blob/main/README.en.md) · [ESP32 (esp32)](https://github.com/Fin2003/monitor-windows/blob/esp32/README.en.md)
+
 Windows host for an ESP32 touchscreen, with AI quotas, hardware metrics and Tibo Radar.
 
 ## Install
