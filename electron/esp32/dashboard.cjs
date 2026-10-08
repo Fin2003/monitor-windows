@@ -29,7 +29,7 @@ function dashboard({config={},cache={},system=null,radar=null,now=Date.now()}={}
   });
   const state=radarState(radar,now),outlook=radarOutlook(radar,now);
   return {coding:codingCards({config,cache,now})[0],
-    sensors,radar:{type:txt(state.latestType||'--',20),at:txt(formatRadarDate(state.latestAt,radar?.config?.displayTimeZone),30),age:txt(formatRadarAge(state.latestAt,now),25),health:txt(state.label,20),state:txt(outlook.badge,20),...(o=>({outlook:txt(o.outlook,45),outlookDetail:txt(o.outlookDetail,40),outlookLate:o.outlookLate}))(outlookLines(outlook)),posts:radarPosts(radar,3).map(p=>({...p,text:txt(p.text,90),tag:txt(p.tag,20),at:txt(p.at,30)}))},
+    sensors,radar:{type:txt(state.latestType||'--',20),at:txt(formatRadarDate(state.latestAt,radar?.config?.displayTimeZone),30),age:txt(formatRadarAge(state.latestAt,now),25),health:txt(state.overviewLabel,20),healthKind:state.kind,state:txt(outlook.badge,20),...(o=>({outlook:txt(o.outlook,45),outlookDetail:txt(o.outlookDetail,40),outlookLate:o.outlookLate}))(outlookLines(outlook)),posts:radarPosts(radar,3).map(p=>({...p,text:txt(p.text,90),tag:txt(p.tag,20),at:txt(p.at,30)}))},
     sourceAge:system?.fetchedAt?Math.max(0,Math.floor((now-system.fetchedAt)/1000)):null};
 }
 module.exports={dashboard};

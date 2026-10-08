@@ -124,6 +124,15 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
   }).sort((a, b) => a.publishedAt - b.publishedAt);
   const events = [];
   for (const p of decorated) {
+    if (p.banked) {
+      const linked = events.find(e => e.banked && !e.post
+        && [e.forecast?.id,e.completion?.id,...(e.relatedPosts || []).map(post=>post.id)].some(id=>p.ancestors.includes(id)));
+      if (linked) {
+        (linked.relatedPosts ||= []).push(p);
+        if (p.kind === 'completion' || /\bconfirmed\s+(?:landed|credited|available)\b/i.test(p.text)) linked.confirmation ||= p;
+        continue;
+      }
+    }
     if (p.kind === 'mention') events.push({ id: p.id, post: p, forecast: null, completion: null, banked: p.banked, eta: null });
     if (p.kind === 'forecast') {
       const active = !p.banked && [...events].reverse().find(e => e.forecast && !e.banked && !e.completion
@@ -179,6 +188,14 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
   // A future ETA still matters even when another reset has completed in between.
   const pending = unresolved.filter(e => !latest || e.forecast.publishedAt > latest.publishedAt || e.eta?.at > latest.publishedAt);
   const pinnedId = pending[0]?.forecast.id;
+  for (const event of events.filter(e=>e.banked)) {
+    for (const post of [event.forecast,event.completion,event.post,...(event.relatedPosts || [])].filter(Boolean)) {
+      post.bankedEventId = event.id;
+      post.bankedCredit = post.id === (event.forecast || event.completion)?.id;
+      post.bankedRole = post.bankedCredit ? 'credited' : post.id === event.confirmation?.id || post.kind === 'completion' ? 'confirmation'
+        : post.kind === 'forecast' ? 'announcement' : /\b(?:EOD|PST|PDT|tonight|tomorrow|by|at)\b/i.test(post.text) ? 'timing' : 'related';
+    }
+  }
   return { events, posts: decorated.sort((a, b) => Number(b.id === pinnedId) - Number(a.id === pinnedId) || b.publishedAt - a.publishedAt).map(post => {
     const result = { ...post, pinned: post.id === pinnedId, superseded: post.kind === 'forecast' && !post.banked && post.id !== pinnedId };
     return { ...result, display: postPresentation(result) };

@@ -91,7 +91,12 @@ function resetHistory(snapshot) {
   const entries = [];
   for (const event of snapshot?.events || []) {
     const completion = event.completion;
-    if (completion?.publishedAt) {
+    const bankedPost = event.banked && !event.post ? event.forecast || completion : null;
+    if (bankedPost) {
+      const confirmation = event.confirmation || completion;
+      entries.push({at:event.sortAt,label:'Banked',tone:'banked',
+        detail:`公告 ${formatRadarDate(bankedPost.publishedAt,zone)}${confirmation && confirmation.id !== bankedPost.id ? ' · 确认 '+formatRadarDate(confirmation.publishedAt,zone) : ''}\n${clean(bankedPost.keyText || bankedPost.text)}`});
+    } else if (completion?.publishedAt) {
       const banked = !!(event.banked || completion.banked || event.pairedBanked);
       entries.push({
         at: completion.publishedAt,

@@ -53,7 +53,7 @@ static void serial_task(void *arg)
                 monitor_ui_preferences_json(preferences,sizeof(preferences));
                 monitor_lights_diagnostics(lights,sizeof(lights));
                 esp_lv_adapter_unlock();
-                snprintf(hello,sizeof(hello),"{\"v\":1,\"type\":\"hello\",\"board\":\"ESP32-S3-Touch-LCD-5B\",\"width\":1024,\"height\":600,\"firmware\":\"monitor-native-0.16.0-background\",\"background\":true,\"capture\":true,\"input\":true,\"freeHeap\":%u,\"freePsram\":%u,\"usbRx\":%u,\"usbLines\":%u,%s,%s}\n",(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),(unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),received,lines,diagnostic,lights);
+                snprintf(hello,sizeof(hello),"{\"v\":1,\"type\":\"hello\",\"board\":\"ESP32-S3-Touch-LCD-5B\",\"width\":1024,\"height\":600,\"firmware\":\"monitor-native-0.16.1-banked\",\"background\":true,\"capture\":true,\"input\":true,\"freeHeap\":%u,\"freePsram\":%u,\"usbRx\":%u,\"usbLines\":%u,%s,%s}\n",(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),(unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),received,lines,diagnostic,lights);
                 send_line(hello);send_line(preferences);
             }
             last_hello = now;

@@ -18,7 +18,7 @@
   let outlook = $derived(radarOutlook(data, now));
   let issue = $derived([syncIssue, analysisIssue].filter(Boolean).join('\n'));
   let stale = $derived(!data.meta.lastSuccess || now - data.meta.lastSuccess > Math.max(300000, data.config.intervalSeconds * 2500));
-  let health = $derived(radarState(data, now).label);
+  let health = $derived(radarState(data, now).overviewLabel);
   let recentReset = $derived(data.recentReset || (data.latest ? { publishedAt: data.latest.publishedAt, type: 'Hard' } : null));
   let age = $derived(recentReset ? elapsed(recentReset.publishedAt) : null);
   function date(at) { return at ? formatRadarDate(at, data.config?.displayTimeZone) : '时间未明确'; }
@@ -41,7 +41,7 @@
   <header>
     <div class="brand"><img src={avatar} alt="Tibo" /><h1>Tibo 雷达</h1></div>
     <div class="tools">
-      <span class="health" class:warn={!!issue || stale} title={issue || health}><i></i><span>{health}</span></span>
+      <span class="health" class:warn={!!issue || stale} title={health || "雷达状态"}><i></i><span>{health}</span></span>
       <button class="icon" aria-label="立即检查新帖" title="立即检查新帖" disabled={refreshing || data.meta.fetching || !data.meta.running} onclick={onRefresh}><Icon name="refresh" size={25} /></button>
       <button class="icon" aria-label="监测设置" title="监测设置" onclick={onSettings}><Icon name="settings" size={25} /></button>
     </div>
@@ -91,7 +91,7 @@
       </div>
     {/if}
   </main>
-  <footer><span title={issue || date(data.meta.lastSuccess)} class:amber={!!issue}>{radarState(data, now).issueLabel || (issue ? '读取异常' : data.meta.lastSuccess ? `${clock(data.meta.lastSuccess)} 更新` : '等待更新')}</span><span>{displayTimeZoneLabel(data.config?.displayTimeZone)}</span></footer>
+  <footer><span title={date(data.meta.lastSuccess)}>{data.meta.lastSuccess ? `${clock(data.meta.lastSuccess)} 更新` : '等待更新'}</span><span>{displayTimeZoneLabel(data.config?.displayTimeZone)}</span></footer>
 </div></div>
 
 <style>

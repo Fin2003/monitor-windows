@@ -191,8 +191,9 @@ static void update(cJSON *data) {
     for (int i = 0; i < 2; i++) ui_sensor_card_update(&sensors[i], cJSON_GetArrayItem(items, i), last_minmax);
 
     cJSON *r = cJSON_GetObjectItemCaseSensitive(data, "radar");
-    const char *health = *str(r, "health") ? str(r, "health") : "--";
-    ui_status_set(&radar.health, health, ui_health_color(health), p->text2);
+    const char *health = str(r, "health"), *kind = str(r, "healthKind");
+    uint32_t health_color = !strcmp(kind,"active") ? p->green : !strcmp(kind,"error") ? p->red : !strcmp(kind,"warning") ? p->amber : p->text3;
+    ui_status_set(&radar.health, health, health_color, p->text2);
     const char *type = str(r, "type");
     ui_chip_set(radar.type, strcmp(type, "--") ? type : "", !strcmp(type, "Banked") ? p->violet : p->green);
     ui_set_text(radar.age, *str(r, "age") ? str(r, "age") : "--");
