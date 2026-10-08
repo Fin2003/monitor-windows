@@ -4,7 +4,8 @@ const { spawn } = require('node:child_process');
 const { png } = require('./preview-png.cjs');
 
 class PreviewHost {
-  constructor(controller) {
+  constructor(controller, onCommand) {
+    this.onCommand = onCommand || (message => controller.command(message));
     this.controller = controller;
     this.revision = 0;
     this.image = '';
@@ -26,11 +27,14 @@ class PreviewHost {
     const child = this.child;
     child.on('exit', () => { if (this.child === child) { this.child = null; clearInterval(this.timer); } });
     this.lastPrefs = '';
+    this.sentBackground = null;
     this.pushFrame();
     this.timer = setInterval(() => this.pushFrame(), 500);
   }
   send(message) { this.child?.stdin.write(JSON.stringify(message) + '\n'); }
+  setBackground(bytes, revision) { this.background = {bytes, revision:revision || ''}; if (this.child) this.pushFrame(); }
   pushFrame() {
+    if (this.background && this.sentBackground !== this.background.revision) { this.sentBackground = this.background.revision; for (const message of require('./transport.cjs').backgroundMessages(this.background.bytes)) this.send(message); }
     const frame = this.controller.frame();
     const prefs = JSON.stringify(frame.prefs);
     if (prefs !== this.lastPrefs) { this.lastPrefs = prefs; this.send({ v: 1, type: 'prefs_set', prefs: frame.prefs }); }
@@ -55,7 +59,7 @@ class PreviewHost {
         else if (line.startsWith('EVENT ')) {
           const message = JSON.parse(line.slice(6));
           if (message.type === 'navigate') this.controller.navigate(message.page);
-          else { const reply = this.controller.command(message); if (reply) this.send(reply); }
+          else { const reply = this.onCommand(message); if (reply) this.send(reply); }
           this.pushFrame();
         }
       }

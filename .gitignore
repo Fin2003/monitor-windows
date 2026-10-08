@@ -103,3 +103,10 @@ electron/esp32/native/
 # Font source is fetched by scripts/prepare-ui-fonts.py
 firmware/fonts/*.otf
 firmware/fonts/*.ttf
+
+# User-selected screen images
+screen-background.png
+screen-background.rgb565
+
+# Local firmware flashing environment
+.flash-tools/

@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import ScreenAppearance from '@shared/components/ScreenAppearance.svelte';
   let image = $state(''), error = $state(''), revision = 0;
   let surface, pressed = $state(false), pointer = $state(null);
   onMount(() => {
@@ -30,7 +31,7 @@
 </script>
 
 <section class="preview" aria-label="ESP32 触屏预览">
-  <header><h3>屏幕预览</h3><span>1024 × 600</span></header>
+  <header><h3>屏幕预览</h3><ScreenAppearance /><span>1024 × 600</span></header>
   <div class="screen" bind:this={surface} role="application" aria-label="鼠标模拟触屏，点击或拖动" tabindex="0"
     onpointerdown={start} onpointermove={move} onpointerup={end} onpointercancel={end} onlostpointercapture={end}>
     {#if image}<img src={image} alt="ESP32 固件界面实时预览" draggable="false" />
@@ -41,6 +42,6 @@
 </section>
 
 <style>
-  .preview{margin-top:24px}header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}h3{margin:0;font-size:15px;font-weight:600}header span,p{color:var(--text-secondary);font-size:12px}p{margin:10px 0;line-height:1.6}.error{color:#de5b55}
+  .preview{margin-top:24px}header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}h3{margin:0;font-size:15px;font-weight:600}header span,p{color:var(--text-secondary);font-size:12px}p{margin:10px 0;line-height:1.6}.error{color:#de5b55}
   .screen{position:relative;width:100%;aspect-ratio:1024/600;background:#101214;overflow:hidden;border:1px solid var(--border);border-radius:12px;touch-action:none;user-select:none;cursor:crosshair;outline:none}.screen:focus-visible{outline:2px solid var(--accent);outline-offset:3px}img{width:100%;height:100%;display:block;pointer-events:none}.empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--text-secondary);font-size:13px}.touch{position:absolute;width:26px;height:26px;margin:-13px;border-radius:50%;border:2px solid #fff;background:#0a84ff66;pointer-events:none;box-shadow:0 0 0 5px #0a84ff22}
 </style>

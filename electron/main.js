@@ -157,6 +157,11 @@ function setupIPC() {
   };
 
 
+  app.screenAppearance = new (require('./screen-appearance.cjs').ScreenAppearance)(configStore);
+  ipcMain.handle('screen-appearance-get', () => app.esp32Backend ? {...app.screenAppearance.get(), theme:app.esp32Backend.status().frame.prefs.dark ? 'dark' : 'light'} : app.screenAppearance.render());
+  ipcMain.handle('screen-theme-set', (_event, theme) => app.screenAppearance.theme(theme));
+  ipcMain.handle('screen-background-choose', () => app.screenAppearance.choose(managerWindow));
+  ipcMain.handle('screen-background-clear', () => app.screenAppearance.clear());
   ipcMain.handle('get-config', () => {
     return configStore.getAll();
   });
@@ -171,9 +176,6 @@ function setupIPC() {
 
     }
     if (key === 'theme') {
-      app.esp32Backend?.setTheme(value);
-      const backend = app.esp32Backend;
-      if (backend) { backend.selectPage(backend.status().page); backend.preview.controller.settings.preferences({ ...backend.preview.controller.settings.data.prefs, dark: value !== 'light' }); }
       for (const [, win] of pluginWindows) {
         if (win && !win.isDestroyed()) {
           win.webContents.send('theme-change', value);
@@ -779,6 +781,7 @@ app.whenReady().then(async () => {
 
   const { startDeviceBackend } = require('./esp32/device-backend.cjs');
   app.esp32Backend = startDeviceBackend({ configStore, providerManager, systemMonitorClient, tiboRadar });
+  app.screenAppearance.publish();
   ipcMain.handle('esp32-preview-get', (_event, revision) => { app.esp32Backend.preview.start(); return app.esp32Backend.preview.snapshot(revision); });
   ipcMain.handle('esp32-preview-input', (_event, input) => { app.esp32Backend.preview.input(input); return true; });
   ipcMain.handle('esp32-preview-close', () => { app.esp32Backend.preview.stop(); return true; });

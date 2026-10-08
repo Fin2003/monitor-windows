@@ -53,7 +53,7 @@ static void serial_task(void *arg)
                 monitor_ui_preferences_json(preferences,sizeof(preferences));
                 monitor_lights_diagnostics(lights,sizeof(lights));
                 esp_lv_adapter_unlock();
-                snprintf(hello,sizeof(hello),"{\"v\":1,\"type\":\"hello\",\"board\":\"ESP32-S3-Touch-LCD-5B\",\"width\":1024,\"height\":600,\"firmware\":\"monitor-native-0.15.4-lights\",\"capture\":true,\"input\":true,\"freeHeap\":%u,\"freePsram\":%u,\"usbRx\":%u,\"usbLines\":%u,%s,%s}\n",(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),(unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),received,lines,diagnostic,lights);
+                snprintf(hello,sizeof(hello),"{\"v\":1,\"type\":\"hello\",\"board\":\"ESP32-S3-Touch-LCD-5B\",\"width\":1024,\"height\":600,\"firmware\":\"monitor-native-0.16.0-background\",\"background\":true,\"capture\":true,\"input\":true,\"freeHeap\":%u,\"freePsram\":%u,\"usbRx\":%u,\"usbLines\":%u,%s,%s}\n",(unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),(unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),received,lines,diagnostic,lights);
                 send_line(hello);send_line(preferences);
             }
             last_hello = now;
@@ -76,10 +76,13 @@ static void serial_task(void *arg)
                 if (!dropping && used) {
                     line[used] = 0;
                     int sequence;
-                    if (!monitor_lights_command(line) && !monitor_capture_command(line,send_line) && !monitor_input_command(line) && monitor_ui_apply(line, &sequence) && sequence >= 0) {
+                    if (!monitor_lights_command(line) && !monitor_capture_command(line,send_line) && !monitor_input_command(line) && monitor_ui_apply(line, &sequence)) {
+                        if (sequence == -2) { send_line("{\"v\":1,\"type\":\"background_ack\"}\n"); }
+                        else if (sequence >= 0) {
                         char reply[80];
                         snprintf(reply, sizeof(reply), "{\"v\":1,\"type\":\"ack\",\"seq\":%d}\n", sequence);
                         send_line(reply);
+                        }
                     }
                 }
                 used = 0; dropping = false;

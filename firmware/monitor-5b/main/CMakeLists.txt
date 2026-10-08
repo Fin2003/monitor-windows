@@ -10,6 +10,7 @@ idf_component_register(
         "monitor_pages.c"
         "monitor_theme.c"
         "monitor_assets.c"
+        "monitor_background.c"
         ${UI_FONT_SOURCES}
         "monitor_settings.c"
         "../components/waveshare_rgb_lcd_port.c"
