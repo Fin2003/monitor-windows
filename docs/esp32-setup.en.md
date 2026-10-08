@@ -26,7 +26,7 @@ For a Monitor update with the same partition layout, use `flash-firmware.bat -Ap
 
 Install the ESP32 Setup EXE, start it, and choose Auto connect on the ESP32 screen page. Select a port manually if multiple devices exist. Configure your own accounts and sensors in the app. The board receives display data; it does not need your account keys.
 
-Use the controls next to the preview title for dark/light mode and image backgrounds. Mouse clicks and drags simulate touch. Images remain in your Windows profile and are sent to board RAM on connection, at 512×300 RGB565 scaled to 1024×600. Reconnect after a board restart to restore the image. Firmware `monitor-native-0.16.0-background` and host 1.3.0 fix stale theme reports overwriting a new selection and move flash saves to an internal-RAM task. Background transfer waits for an acknowledgment for each block.
+Use the controls next to the preview title for dark/light mode and image backgrounds. Mouse clicks and drags simulate touch. Images remain in your Windows profile and are sent to board RAM on connection, at 512×300 RGB565 scaled to 1024×600. Reconnect after a board restart to restore the image. Firmware `monitor-native-0.16.0-background` and host 1.3.1 fix stale theme reports overwriting a new selection and move flash saves to an internal-RAM task. Background transfer waits for an acknowledgment for each block.
 
 If no port appears, check the data cable and USB interface; hold BOOT while connecting and release it as described by Waveshare. For a stuck Connecting message, close serial apps, enter BOOT mode, retry, and press RESET afterwards. If the app is offline after flashing, confirm the native USB Serial/JTAG interface and close other Monitor instances.
 

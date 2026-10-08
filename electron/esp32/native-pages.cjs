@@ -123,11 +123,11 @@ function radarPage({ radar = null, now = Date.now() } = {}) {
   const banks = (data.banked || []).filter(event => !event.post && !event.pairedBanked && event.sortAt >= cutoff && event.sortAt <= now).slice(0, 2).map(event => day(event.sortAt, zone));
   const last = finite(data.meta?.lastSuccess);
   return {
-    type: 'radar', health: text(state.label, 16), recentType: text(recent?.type || '--', 12),
+    type: 'radar', health: text(state.overviewLabel, 16), recentType: text(recent?.type || '--', 12),
     age: elapsed(recent?.publishedAt, now), recentAt: recent ? formatRadarDate(recent.publishedAt, zone) : '无记录',
     outlook: text(outlook.label, 28), badge: text(outlook.badge, 20), tone: outlook.tone,
     banks, events, posts: radarPosts(data, 3),
-    updated: state.issueLabel || (last === null ? '等待更新' : clock(last, zone) + ' 更新'),
+    updated: last === null ? '等待更新' : clock(last, zone) + ' 更新',
     timezone: displayTimeZoneLabel(zone),
   };
 }
