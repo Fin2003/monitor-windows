@@ -23,9 +23,24 @@ function startDeviceBackend({ configStore, providerManager, systemMonitorClient,
     return { config: configStore.get(), cache: providerManager.getCachedData(), providers: providerManager.getAllProviders(),
       system, radar: tiboRadar.snapshot(), translations: fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null };
   } });
-  const preview = new PreviewHost(controller);
+  const preview = new PreviewHost(controller, message => command(message));
   function setTheme(theme) { controller.settings.preferences({ ...controller.settings.data.prefs, dark: theme !== 'light' }); }
-  setTheme(configStore.get('theme'));
+  let background = {revision:'', bytes:null};
+  function setBackground(bytes, revision) { background = {bytes, revision:revision || ''}; preview.setBackground(bytes, revision); }
+  function command(message) {
+    if (message.type === 'prefs') {
+      const desired = configStore.get('screenAppearance')?.theme;
+      if (message.source !== 'device' && desired) message.prefs = {...message.prefs, dark:desired !== 'light'};
+    }
+    const reply = controller.command(message);
+    if (message.type === 'prefs' && message.source === 'device') {
+      const theme = controller.settings.data.prefs.dark ? 'dark' : 'light';
+      const saved = configStore.get('screenAppearance') || {};
+      if (saved.theme !== theme) { configStore.set('screenAppearance', {...saved, theme}); require('electron').app.screenAppearance?.publish(); }
+    }
+    return reply;
+  }
+  setTheme(configStore.get('screenAppearance')?.theme || (controller.settings.data.prefs.dark ? 'dark' : 'light'));
   const getFrame = () => controller.frame();
   function selectPage(value) { controller.navigate(value); }
   function closeLink() { lights?.stop(); lights = null; transport?.stop(); transport = null; }
@@ -40,8 +55,9 @@ function startDeviceBackend({ configStore, providerManager, systemMonitorClient,
       if (!selected.port) return;
       if (transport?.path === selected.port && !transport.stopped) return;
       closeLink();
+      setTheme(configStore.get('screenAppearance')?.theme || (controller.settings.data.prefs.dark ? 'dark' : 'light'));
       transport = new DeviceTransport({ port: selected.port, SerialPort, getFrame, onNavigate: selectPage,
-        onCommand: message => controller.command(message),
+        getBackground: () => background, onCommand: command,
         onMessage: message => lights?.onMessage(message) === true }).start();
       lights = new LightControl({ transport, profile });
       await lights.start();
@@ -66,10 +82,12 @@ function startDeviceBackend({ configStore, providerManager, systemMonitorClient,
   if (requested || auto) connect(requested || 'auto').catch(error => { connectionMessage = error.message; });
   const status = () => ({ board: 'ESP32-S3-Touch-LCD-5B', width: 1024, height: 600, mode: live ? 'live' : 'passive',
     port: transport?.path || '', open: !!transport?.port?.isOpen, auto, candidates, connectionMessage,
+    backgroundSupported: transport?.diagnostics?.background === true,
+    deviceAppearance: {dark:transport?.diagnostics?.dark,backgroundReady:transport?.diagnostics?.backgroundReady,freePsram:transport?.diagnostics?.freePsram},
     ready: !!transport?.ready && Date.now() - transport.lastSeen < 6000,
     system: { enabled: live && overviewDependencies(configStore.get('plugins') || [], configStore.get('compactOverview')).system,
       fresh: !!system && system.cached !== true, fetchedAt: system?.fetchedAt || null, error: systemError },
     page: controller.page, pages: controller.views.map((view, i) => ({ id: i, title: view.title })), frame: getFrame() });
-  return { getFrame, connect, disconnect, status, selectPage, setTheme, preview, stop() { stopped = true; clearInterval(timer); translations.stop(); preview.stop(); closeLink(); } };
+  return { getFrame, connect, disconnect, status, selectPage, setTheme, setBackground, preview, stop() { stopped = true; clearInterval(timer); translations.stop(); preview.stop(); closeLink(); } };
 }
 module.exports = { startDeviceBackend };

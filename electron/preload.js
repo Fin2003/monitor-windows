@@ -8,6 +8,11 @@ contextBridge.exposeInMainWorld('api', {
   connectEsp32: port => ipcRenderer.invoke('esp32-connect', port),
   disconnectEsp32: () => ipcRenderer.invoke('esp32-disconnect'),
   setEsp32Page: page => ipcRenderer.invoke('esp32-page', page),
+  getScreenAppearance: () => ipcRenderer.invoke('screen-appearance-get'),
+  setScreenTheme: theme => ipcRenderer.invoke('screen-theme-set', theme),
+  chooseScreenBackground: () => ipcRenderer.invoke('screen-background-choose'),
+  clearScreenBackground: () => ipcRenderer.invoke('screen-background-clear'),
+  onScreenAppearanceChange: callback => { const listener = (_event, value) => callback(value); ipcRenderer.on('screen-appearance-change', listener); return () => ipcRenderer.removeListener('screen-appearance-change', listener); },
   getConfig: () => ipcRenderer.invoke('get-config'),
   setConfig: (key, value) => ipcRenderer.invoke('set-config', key, value),
 

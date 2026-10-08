@@ -17,7 +17,7 @@ file(GLOB UI_FONT_SOURCES CONFIGURE_DEPENDS ../monitor-5b/main/fonts/*.c)
 add_executable(MonitorEsp32Preview main.c settings.c
   ../monitor-5b/main/monitor_ui.c ../monitor-5b/main/monitor_dashboard.c
   ../monitor-5b/main/monitor_pages.c ../monitor-5b/main/monitor_theme.c
-  ../monitor-5b/main/monitor_assets.c ${UI_FONT_SOURCES} ${cjson_SOURCE_DIR}/cJSON.c)
+  ../monitor-5b/main/monitor_assets.c ../monitor-5b/main/monitor_background.c ${UI_FONT_SOURCES} ${cjson_SOURCE_DIR}/cJSON.c)
 target_include_directories(MonitorEsp32Preview PRIVATE . ../monitor-5b/main ${cjson_SOURCE_DIR})
 target_link_libraries(MonitorEsp32Preview PRIVATE lvgl m)
 target_compile_options(MonitorEsp32Preview PRIVATE -ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=/src/preview -fdebug-prefix-map=${CMAKE_SOURCE_DIR}=/src/preview)

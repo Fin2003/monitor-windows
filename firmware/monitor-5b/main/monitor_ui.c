@@ -3,6 +3,7 @@
 #include "monitor_dashboard.h"
 #include "monitor_pages.h"
 #include "monitor_theme.h"
+#include "monitor_background.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +39,8 @@ static bool mirror_mode, passive = true, settings_dirty, save_failed;
 static monitor_settings_t save_copy;
 static volatile bool save_requested;
 static monitor_settings_t prefs;
+static bool pushing_prefs;
+static const char *prefs_source="state";
 static QueueHandle_t navigation, commands;
 static lv_font_t large_font;
 #define FRAME_STALE_US 15000000LL
@@ -212,6 +215,7 @@ static void open_radar_detail(const char *caption) {
     lv_obj_set_scroll_dir(radar_detail_scroll,LV_DIR_VER);lv_obj_set_scrollbar_mode(radar_detail_scroll,LV_SCROLLBAR_MODE_AUTO);
     lv_obj_set_style_bg_color(radar_detail_scroll,lv_color_hex(p->border),LV_PART_SCROLLBAR);lv_obj_set_style_width(radar_detail_scroll,4,LV_PART_SCROLLBAR);
     create_radar_detail_body();lv_label_set_text(radar_detail_body,"正在读取...");lv_obj_set_style_text_color(radar_detail_body,lv_color_hex(p->text2),0);
+    monitor_background_style(dashboard_panel);monitor_background_style(native_page_panel);
     style_radar_detail();lv_obj_move_foreground(radar_detail_overlay);
 }
 bool monitor_ui_radar_detail_active(void) {return radar_detail_overlay!=NULL;}
@@ -407,12 +411,12 @@ void monitor_ui_service_save(void) {
     esp_lv_adapter_unlock();
 }
 void monitor_ui_preferences_json(char *json,size_t size) {
-    snprintf(json,size,"{\"v\":1,\"type\":\"prefs\",\"revision\":%lu,\"prefs\":{\"mask\":%lu,\"order\":[%lu,%lu,%lu,%lu],\"dark\":%s,\"bigValues\":%s,\"showMinMax\":%s,\"cycleSeconds\":%lu}}\n",
-        (unsigned long)revision,(unsigned long)prefs.mask,(unsigned long)prefs.order[0],(unsigned long)prefs.order[1],(unsigned long)prefs.order[2],(unsigned long)prefs.order[3],prefs.dark?"true":"false",prefs.big_values?"true":"false",prefs.show_minmax?"true":"false",(unsigned long)prefs.cycle_seconds);
+    snprintf(json,size,"{\"v\":1,\"type\":\"prefs\",\"source\":\"%s\",\"revision\":%lu,\"prefs\":{\"mask\":%lu,\"order\":[%lu,%lu,%lu,%lu],\"dark\":%s,\"bigValues\":%s,\"showMinMax\":%s,\"cycleSeconds\":%lu}}\n",
+        prefs_source,(unsigned long)revision,(unsigned long)prefs.mask,(unsigned long)prefs.order[0],(unsigned long)prefs.order[1],(unsigned long)prefs.order[2],(unsigned long)prefs.order[3],prefs.dark?"true":"false",prefs.big_values?"true":"false",prefs.show_minmax?"true":"false",(unsigned long)prefs.cycle_seconds);
 }
 void monitor_ui_diagnostics_json(char *json,size_t size) {
-    snprintf(json,size,"\"frames\":%lu,\"touches\":%lu,\"settingsOpen\":%s,\"settingsPage\":%d,\"detailOpen\":%s,\"detailPending\":%s,\"manualOpen\":%s,\"mask\":%lu,\"dark\":%s,\"settingsSaved\":%s",
-        (unsigned long)frame_count,(unsigned long)touches,overlay?"true":"false",settings_page,radar_detail_overlay?"true":"false",radar_detail_pending?"true":"false",manual_overlay?"true":"false",(unsigned long)prefs.mask,prefs.dark?"true":"false",(!settings_dirty&&!save_requested&&!save_failed)?"true":"false");
+    snprintf(json,size,"\"backgroundReady\":%s,\"frames\":%lu,\"touches\":%lu,\"settingsOpen\":%s,\"settingsPage\":%d,\"detailOpen\":%s,\"detailPending\":%s,\"manualOpen\":%s,\"mask\":%lu,\"dark\":%s,\"settingsSaved\":%s",
+        monitor_background_active()?"true":"false",(unsigned long)frame_count,(unsigned long)touches,overlay?"true":"false",settings_page,radar_detail_overlay?"true":"false",radar_detail_pending?"true":"false",manual_overlay?"true":"false",(unsigned long)prefs.mask,prefs.dark?"true":"false",(!settings_dirty&&!save_requested&&!save_failed)?"true":"false");
 }
 static void request_catalog(void) {
     if(!connected()) {if(catalog_position)lv_label_set_text(catalog_position,"USB 未连接");return;}
@@ -453,7 +457,8 @@ static void apply_density(void) {
 }
 static void changed(void) {
     settings_dirty=true;last_change=esp_timer_get_time();revision++;
-    char command[1024]={0};monitor_ui_preferences_json(command,sizeof(command));xQueueSend(commands,command,0);
+    prefs_source=pushing_prefs?"host":"device";
+    char command[1024]={0};monitor_ui_preferences_json(command,sizeof(command));xQueueSend(commands,command,0);prefs_source="state";
     if(save_status)lv_label_set_text(save_status,"保存中");
     apply_density();apply_palette();
 }
@@ -882,6 +887,7 @@ static void open_settings(lv_event_t *event) {
     settings_body=manager_panel(overlay,0,38,1024,562,manager_bg(),0,false);render_settings_home();bubble_tree(overlay);apply_palette();
 }
 static void show_content(bool dashboard,bool native){
+    monitor_background_style(dashboard_panel);monitor_background_style(native_page_panel);
     dashboard_visible=dashboard;bool visible=dashboard||native;
     if(dashboard)lv_obj_clear_flag(dashboard_panel,LV_OBJ_FLAG_HIDDEN);else lv_obj_add_flag(dashboard_panel,LV_OBJ_FLAG_HIDDEN);
     monitor_pages_show(native);
@@ -896,6 +902,7 @@ void monitor_ui_init(void) {
     save_failed=!monitor_settings_load(&prefs);
     navigation=xQueueCreate(1,sizeof(int));commands=xQueueCreate(8,1024);configASSERT(navigation&&commands);
     large_font=ui_font_26b;
+    monitor_background_init();
     lv_obj_t *screen=lv_scr_act();lv_obj_clear_flag(screen,LV_OBJ_FLAG_SCROLLABLE);lv_obj_set_style_text_font(screen,&ui_font_20r,0);
     lv_obj_add_event_cb(screen,root_event,LV_EVENT_ALL,NULL);
     title=label(screen,22,16,620,foreground());lv_label_set_text(title,"Monitor / ESP32-S3 5B");
@@ -1015,13 +1022,19 @@ static bool apply_pushed_prefs(cJSON *value) {
     for(int i=0;i<3;i++){cJSON *flag=cJSON_GetObjectItemCaseSensitive(value,flags[i]);if(cJSON_IsBool(flag))*targets[i]=cJSON_IsTrue(flag);}
     if(cJSON_IsNumber(cycle)){int s=cycle->valueint;if(s==0||s==5||s==10||s==15||s==30||s==60)next.cycle_seconds=(uint32_t)s;}
     if(!memcmp(&next,&prefs,sizeof(prefs)))return true;
-    prefs=next;changed();return true;
+    prefs=next;pushing_prefs=true;changed();pushing_prefs=false;return true;
 }
 bool monitor_ui_apply(const char *json,int *sequence) {
     *sequence=-1;cJSON *root=cJSON_Parse(json);if(!root)return false;
     cJSON *version=cJSON_GetObjectItemCaseSensitive(root,"v");
     if(!cJSON_IsNumber(version)||version->valuedouble!=1){cJSON_Delete(root);return false;}
     const char *type=string(root,"type");
+    if(!strncmp(type,"background_",11)) {
+        if(esp_lv_adapter_lock(100)!=ESP_OK){cJSON_Delete(root);return false;}
+        bool ok=monitor_background_apply(root);
+        monitor_background_style(dashboard_panel);monitor_background_style(native_page_panel);
+        esp_lv_adapter_unlock();cJSON_Delete(root);if(ok)*sequence=-2;return ok;
+    }
     if(!strcmp(type,"prefs_set")) {
         if(esp_lv_adapter_lock(100)!=ESP_OK){cJSON_Delete(root);return false;}
         bool ok=apply_pushed_prefs(cJSON_GetObjectItemCaseSensitive(root,"prefs"));

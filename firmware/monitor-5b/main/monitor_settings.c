@@ -2,10 +2,30 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
+
+static QueueHandle_t save_requests, save_results;
+static bool save_to_nvs(const monitor_settings_t *s);
+static void save_task(void *unused) {
+    (void)unused;
+    monitor_settings_t settings;
+    for (;;) {
+        xQueueReceive(save_requests,&settings,portMAX_DELAY);
+        bool saved=save_to_nvs(&settings);
+        xQueueSend(save_results,&saved,portMAX_DELAY);
+    }
+}
 void monitor_settings_defaults(monitor_settings_t *s) {
     *s=(monitor_settings_t){.schema=1,.mask=15,.order={0,1,2,3},.dark=1,.big_values=0,.show_minmax=1,.cycle_seconds=0};
 }
 bool monitor_settings_load(monitor_settings_t *s) {
+    /* Flash writes must run on an internal-RAM stack, not the USB task's PSRAM stack. */
+    save_requests=xQueueCreate(1,sizeof(monitor_settings_t));
+    save_results=xQueueCreate(1,sizeof(bool));
+    configASSERT(save_requests&&save_results);
+    configASSERT(xTaskCreate(save_task,"monitor_save",4096,NULL,3,NULL)==pdPASS);
     monitor_settings_defaults(s);
     if(nvs_flash_init()!=ESP_OK)return false;
     nvs_handle_t handle;
@@ -19,10 +39,16 @@ bool monitor_settings_load(monitor_settings_t *s) {
     if(saved.cycle_seconds!=0&&saved.cycle_seconds!=5&&saved.cycle_seconds!=10&&saved.cycle_seconds!=15&&saved.cycle_seconds!=30&&saved.cycle_seconds!=60)return false;
     *s=saved;return true;
 }
-bool monitor_settings_save(const monitor_settings_t *s) {
+static bool save_to_nvs(const monitor_settings_t *s) {
     nvs_handle_t handle;if(nvs_open("monitor",NVS_READWRITE,&handle)!=ESP_OK)return false;
     esp_err_t result=nvs_set_blob(handle,"display",s,sizeof(*s));
     if(result==ESP_OK) result=nvs_commit(handle);
     nvs_close(handle);
     return result==ESP_OK;
+}
+bool monitor_settings_save(const monitor_settings_t *s) {
+    bool result;
+    xQueueSend(save_requests,s,portMAX_DELAY);
+    xQueueReceive(save_results,&result,portMAX_DELAY);
+    return result;
 }
