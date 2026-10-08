@@ -182,6 +182,11 @@
 <dialog bind:this={settingsDialog} class="settings-dialog">
   <div class="dialog-heading"><h2>监测设置</h2><button class="icon" title="关闭设置" aria-label="关闭设置" onclick={() => settingsDialog.close()}><Icon name="close" size={25} /></button></div>
   <section class="settings">
+    {#if syncIssue || analysisIssue}
+      <div class="model-result warning" role="status"><strong>需处理的问题</strong>
+        {#each [...new Set([error,...(data.meta.errors || [])].filter(Boolean))] as issue}<p>{issue}</p>{/each}
+      </div>
+    {/if}
     <section class="provider-section" aria-label="判断渠道">
       <div class="channel-heading"><strong>判断渠道</strong></div>
       <div class="provider-options">
