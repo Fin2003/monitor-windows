@@ -16,6 +16,7 @@
   let useCustomPosition = $state(false);
   let ignoreScaleFactor = $state(false);
   let loading = $state(true);
+  let saveError = $state('');
   let applyTimer = null;
   let isDraggingPosition = $state(false);
   let dragStartX = $state(null);
@@ -107,8 +108,12 @@
     try {
       await window.api.setConfig('display', buildDisplayConfig());
       await window.api.setConfig('theme', theme);
+      saveError = '';
       onconfigchanged?.();
-    } catch (_) {}
+    } catch (e) {
+      console.error('[DisplaySettings] save failed:', e);
+      saveError = '设置保存失败：' + (e?.message || e);
+    }
   }
 
   async function toggleTheme() {
@@ -169,7 +174,10 @@
     try {
       await window.api.updateMonitorBounds({ x: customX, y: customY, width: effectiveWidth, height: effectiveHeight });
       monitorStatus = await window.api.getMonitorStatus();
-    } catch (_) {}
+    } catch (e) {
+      console.error('[DisplaySettings] apply bounds failed:', e);
+      saveError = '屏幕位置应用失败：' + (e?.message || e);
+    }
   }
 
   function scheduleApply() {
@@ -379,6 +387,7 @@
 
 <div class="page">
   <h2 class="page-title">显示设置</h2>
+  {#if saveError}<p class="save-error" role="alert">{saveError}</p>{/if}
 
   {#if loading}
     <div class="loading">加载中...</div>
@@ -663,6 +672,7 @@
   .slider-value { min-width: 44px; color: var(--accent); font-weight: 500; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
   .slider-value-input { width: 64px; padding: 2px 6px; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
 
+  .save-error { font-size: 12px; color: var(--danger); margin: 0 0 12px; line-height: 1.6; }
   .hint { font-size: 12px; color: var(--text-secondary); margin-top: 8px; line-height: 1.6; }
 
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }

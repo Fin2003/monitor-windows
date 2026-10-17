@@ -536,7 +536,9 @@ class ProviderManager {
           const cache = this.#configStore.get('providerCache') || {};
           cache[providerId] = { data, timestamp: Date.now() };
           this.#configStore.set('providerCache', cache);
-        } catch (_) {}
+        } catch (e) {
+          console.error(`[ProviderManager] cache write ${providerId}:`, e.message);
+        }
       }
     }
     if (this.#mainWindow && !this.#mainWindow.isDestroyed()) {

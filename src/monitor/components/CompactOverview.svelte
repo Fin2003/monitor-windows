@@ -3,7 +3,7 @@
   import Icon from '@shared/components/Icon.svelte';
   import SystemMonitorPage from './SystemMonitorPage.svelte';
   import { responsiveLayout, codingChannelKeys } from '../../shared/compact-overview-config.cjs';
-  import avatar from '../../../plugins/tibo-radar/assets/tibo.jpg';
+  import avatar from '../../../plugins/tibo-radar/assets/tibo-mark.svg';
   import ManualResetDialog from '../../../plugins/tibo-radar/ManualResetDialog.svelte';
   import { formatRadarAge, formatRadarDate, radarState, radarOutlook, latestRadarPosts } from '../../../plugins/tibo-radar/presentation.cjs';
   import {
