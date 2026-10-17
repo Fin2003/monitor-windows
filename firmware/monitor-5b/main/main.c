@@ -1,4 +1,5 @@
-/* Hardware initialization adapted from Waveshare / Espressif's CC0 example. */
+/* Hardware initialization adapted from Waveshare's ESP32-S3-Touch-LCD-5 demo and ESP-IDF's
+   CC0-1.0 rgb_panel example; see components/waveshare_rgb_lcd_port.c for the source. */
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

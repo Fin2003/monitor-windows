@@ -290,14 +290,19 @@
   async function loadLoginInfo() {
     try {
       for (const acc of accounts) {
-        if (loginStatus[acc.id] === 'connected') {
+        if (loginStatus[acc.id] !== 'connected') continue;
+        try {
           const info = await window.api.getProviderLoginInfo(acc.id);
           if (info && (info.email || info.phone || info.displayName)) {
             loginInfo = { ...loginInfo, [acc.id]: info };
           }
+        } catch (e) {
+          console.error(`[panel] login info ${acc.id}:`, e);
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error('[panel] login info:', e);
+    }
   }
 
   async function login(accId) {
@@ -390,7 +395,9 @@
       channelStatus = nextStatus;
       channelHighFreq = nextHighFreq;
       channelFetching = nextFetching;
-    } catch (_) {}
+    } catch (e) {
+      console.error('[panel] channel status:', e);
+    }
   }
 
   async function loadAccounts() {
@@ -484,34 +491,38 @@
   }
 
   async function loadCredentials() {
-    try {
-      for (const acc of accounts) {
+    for (const acc of accounts) {
+      try {
         const creds = await window.api.getProviderCredentials(acc.id);
         if (creds) credentials = { ...credentials, [acc.id]: creds };
+      } catch (e) {
+        console.error(`[panel] credentials ${acc.id}:`, e);
       }
-    } catch (_) {}
+    }
   }
 
   async function loadProxyPorts() {
-    try {
-      for (const acc of accounts) {
-        if (acc.type === 'opencodego') {
-          const port = await window.api.getProviderProxyPort(acc.id);
-          proxyPorts = { ...proxyPorts, [acc.id]: port || '' };
-        }
+    for (const acc of accounts) {
+      if (acc.type !== 'opencodego') continue;
+      try {
+        const port = await window.api.getProviderProxyPort(acc.id);
+        proxyPorts = { ...proxyPorts, [acc.id]: port || '' };
+      } catch (e) {
+        console.error(`[panel] proxy port ${acc.id}:`, e);
       }
-    } catch (_) {}
+    }
   }
 
   async function loadProviderConfig() {
-    try {
-      for (const acc of accounts) {
-        if (acc.type === 'opencodego') {
-          const cfg = await window.api.getProviderConfig(acc.id);
-          providerConfig = { ...providerConfig, [acc.id]: cfg || { workspaceUrl: '' } };
-        }
+    for (const acc of accounts) {
+      if (acc.type !== 'opencodego') continue;
+      try {
+        const cfg = await window.api.getProviderConfig(acc.id);
+        providerConfig = { ...providerConfig, [acc.id]: cfg || { workspaceUrl: '' } };
+      } catch (e) {
+        console.error(`[panel] provider config ${acc.id}:`, e);
       }
-    } catch (_) {}
+    }
   }
 
   async function saveCredentials(accId) {

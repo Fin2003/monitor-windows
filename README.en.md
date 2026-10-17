@@ -49,7 +49,7 @@ Open **Plugin manager → Marketplace** to install plugins. Developers can submi
 
 Original code is [ISC](LICENSE). Third-party licenses and attribution are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [licenses](licenses).
 
-Thanks to [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), [hwinfo](https://github.com/lfreist/hwinfo), [CapFrameX](https://github.com/DevTechProfile/CapFrameX), [PawnIO](https://github.com/namazso/PawnIO), [CC Switch](https://github.com/farion1231/cc-switch), [QuotaRadar](https://github.com/Asklear/QuotaRadar), [CodexBar](https://github.com/steipete/CodexBar), [Waveshare](https://github.com/waveshareteam), [LVGL](https://github.com/lvgl/lvgl) and [QuickJS](https://github.com/justjake/quickjs-emscripten).
+Thanks to [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), [hwinfo](https://github.com/lfreist/hwinfo), [CapFrameX](https://github.com/CXWorld/CapFrameX), [PawnIO](https://github.com/namazso/PawnIO), [CC Switch](https://github.com/farion1231/cc-switch), [QuotaRadar](https://github.com/Asklear/QuotaRadar), [CodexBar](https://github.com/steipete/CodexBar), [Waveshare](https://github.com/waveshareteam), [LVGL](https://github.com/lvgl/lvgl) and [QuickJS](https://github.com/justjake/quickjs-emscripten).
 
 ## Star history
 

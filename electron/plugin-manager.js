@@ -63,7 +63,9 @@ class PluginManager {
         if (fs.existsSync(manifestPath)) {
           try {
             manifest = { ...manifest, ...JSON.parse(fs.readFileSync(manifestPath, 'utf8')) };
-          } catch (_) {}
+          } catch (e) {
+            console.warn(`[PluginManager] invalid manifest ${manifestPath}:`, e.message);
+          }
         }
 
         if (!fs.existsSync(htmlPath) && manifest.kind !== 'quota') continue;
@@ -89,7 +91,9 @@ class PluginManager {
            sources: Array.isArray(manifest.sources) ? manifest.sources : [],
          });
       }
-    } catch (_) {}
+    } catch (e) {
+      if (e.code !== 'ENOENT') console.error(`[PluginManager] cannot scan ${dir}:`, e.message);
+    }
   }
 
   install(pluginPath) {
