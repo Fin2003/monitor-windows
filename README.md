@@ -49,7 +49,7 @@ AI 额度／余额查询 · CPU/GPU/内存监控 · Tibo 雷达 · 缩略总览�
 
 原创代码采用 [ISC](LICENSE)。第三方许可与完整来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 和 [licenses](licenses)。
 
-感谢 [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)、[hwinfo](https://github.com/lfreist/hwinfo)、[CapFrameX](https://github.com/DevTechProfile/CapFrameX)、[PawnIO](https://github.com/namazso/PawnIO)、[CC Switch](https://github.com/farion1231/cc-switch)、[QuotaRadar](https://github.com/Asklear/QuotaRadar)、[CodexBar](https://github.com/steipete/CodexBar)、[Waveshare](https://github.com/waveshareteam)、[LVGL](https://github.com/lvgl/lvgl) 与 [QuickJS](https://github.com/justjake/quickjs-emscripten)。
+感谢 [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)、[hwinfo](https://github.com/lfreist/hwinfo)、[CapFrameX](https://github.com/CXWorld/CapFrameX)、[PawnIO](https://github.com/namazso/PawnIO)、[CC Switch](https://github.com/farion1231/cc-switch)、[QuotaRadar](https://github.com/Asklear/QuotaRadar)、[CodexBar](https://github.com/steipete/CodexBar)、[Waveshare](https://github.com/waveshareteam)、[LVGL](https://github.com/lvgl/lvgl) 与 [QuickJS](https://github.com/justjake/quickjs-emscripten)。
 
 ## Star 趋势
 

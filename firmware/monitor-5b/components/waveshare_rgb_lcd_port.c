@@ -1,3 +1,6 @@
+/* Adapted from Waveshare's ESP32-S3-Touch-LCD-5 ESP-IDF LVGL demo
+ * (https://files.waveshare.com/wiki/ESP32-S3-Touch-LCD-5/ESP32-S3-Touch-LCD-5-Demo.zip),
+ * which builds on ESP-IDF examples/peripherals/lcd/rgb_panel (SPDX-License-Identifier: CC0-1.0). */
 #include "waveshare_rgb_lcd_port.h"
 
 #include "freertos/FreeRTOS.h"
