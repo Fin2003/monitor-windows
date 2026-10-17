@@ -1,6 +1,6 @@
 <script>
   import Icon from '@shared/components/Icon.svelte';
-  import avatar from './assets/tibo.jpg';
+  import avatar from './assets/tibo-mark.svg';
   import { eventPresentation, postPresentation, radarState, radarOutlook, formatRadarDate, displayTimeZoneLabel } from './presentation.cjs';
   let { data, now, loading, refreshing, syncIssue, analysisIssue, onRefresh, onSettings, onInspect, onManual = () => {} } = $props();
   let canMark = $derived(!!data.manual?.canMark);

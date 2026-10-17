@@ -165,12 +165,12 @@
 
   async function setDisplayMode(mode) {
     displayMode = mode;
-    try { await window.api.setConfig('displayMode', mode); } catch (_) {}
+    try { await window.api.setConfig('displayMode', mode); } catch (e) { console.error('[monitor] save displayMode:', e); }
   }
 
   async function setActiveProvider(pid) {
     activeProvider = pid;
-    try { await window.api.setConfig('activeProvider', pid); } catch (_) {}
+    try { await window.api.setConfig('activeProvider', pid); } catch (e) { console.error('[monitor] save activeProvider:', e); }
   }
 
   onMount(async () => {

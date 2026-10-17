@@ -1,6 +1,6 @@
 {
   "name": "monitor-windows",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Windows secondary-display monitor with Coding Plan, hardware sensors and Tibo Radar plugins",
   "main": "electron/main.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "dist:win": "npm run build:engine && npm run build && electron-builder --win nsis --x64 --publish never"
   },
   "keywords": [],
-  "author": "",
+  "author": "Fin2003",
   "license": "ISC",
   "type": "commonjs",
   "build": {
@@ -83,7 +83,7 @@
       ],
       "icon": "electron/assets/app-icon.ico"
     },
-    "appId": "io.github.monitor.windows",
+    "appId": "io.github.fin2003.monitor-windows",
     "productName": "Monitor Windows",
     "directories": {
       "output": "release"
@@ -97,7 +97,8 @@
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false,
       "installerIcon": "electron/assets/app-icon.ico",
-      "uninstallerIcon": "electron/assets/app-icon.ico"
+      "uninstallerIcon": "electron/assets/app-icon.ico",
+      "guid": "0e843acb-b851-54f2-a420-1076999b2f4f"
     },
     "extraResources": [
       {
