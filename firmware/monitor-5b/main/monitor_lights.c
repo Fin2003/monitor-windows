@@ -6,6 +6,7 @@
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
 #include "esp_random.h"
+#include "esp_bt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -14,6 +15,7 @@
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
+#include "host/ble_att.h"
 #include "host/util/util.h"
 
 typedef struct {
@@ -21,11 +23,11 @@ typedef struct {
     uint8_t data[3][64];
     uint8_t length[3];
 } light_job_t;
-typedef struct { int id, code, completed, instance, target; bool event; const char *stage; } light_reply_t;
-enum { JOB_ADV, JOB_GATT, JOB_RELEASE, JOB_PING, JOB_MAINTAIN };
+typedef struct { int id, code, completed, instance, target; bool event, sample; const char *stage; int rssi_count, rssi_sum, rssi_min, rssi_max; } light_reply_t;
+enum { JOB_ADV, JOB_GATT, JOB_RELEASE, JOB_PING, JOB_MAINTAIN, JOB_SAMPLE };
 static QueueHandle_t gatt_jobs, adv_jobs, replies;
 static SemaphoreHandle_t gatt_done;
-static volatile bool synced, started, adv_busy, gatt_busy, connecting, maintain_gatt = true;
+static volatile bool synced, started, adv_busy, gatt_busy, connecting, scanning, maintain_gatt;
 static volatile int init_code, gatt_code, init_phase;
 static volatile int lamp1_error;
 static volatile int connect_status, disconnect_reason, service_status, characteristic_status;
@@ -36,6 +38,13 @@ static ble_addr_t last_peer;
 static bool have_peer, known_peer;
 static const char *gatt_stage = "idle";
 static volatile unsigned scan_reports, scan_matches;
+static volatile unsigned connect_attempts, connections_established;
+static int64_t last_peer_seen, last_connected, last_disconnected;
+static int init_power_error, scan_power_error, connection_power_error;
+static uint16_t lamp1_mtu = BLE_ATT_MTU_DFLT;
+static char observed_lamp_name[64];
+static volatile bool sampling;
+static volatile int rssi_count, rssi_sum, rssi_min, rssi_max;
 static uint8_t own_address;
 static uint16_t connection = BLE_HS_CONN_HANDLE_NONE, write_handle, service_start, service_end;
 static bool advertising_configured;
@@ -65,34 +74,51 @@ static int on_service(uint16_t handle, const struct ble_gatt_error *error, const
     } else if (error->status) finish_gatt(error->status);
     return 0;
 }
+static int on_mtu(uint16_t handle, const struct ble_gatt_error *error, uint16_t mtu, void *arg) {
+    if (handle != connection) return 0;
+    if (error->status) { finish_gatt(error->status); return 0; }
+    lamp1_mtu = mtu;
+    gatt_stage = "gatt_service";
+    int rc = ble_gattc_disc_svc_by_uuid(handle, &service_uuid.u, on_service, NULL);
+    if (rc) finish_gatt(rc);
+    return 0;
+}
 static bool matches_lamp(const uint8_t *data, int length) {
     struct ble_hs_adv_fields fields;
     if (ble_hs_adv_parse_fields(&fields, data, length)) return false;
     if (fields.name_len) {
         char name[64]; int count = fields.name_len < 63 ? fields.name_len : 63;
         memcpy(name, fields.name, count); name[count] = 0;
+        if (strstr(name, "GFMESH") || strstr(name, "JST-")) memcpy(observed_lamp_name, name, count + 1);
         if (strstr(name, "JST-3194-CCT")) return true;
-    }
-    for (int i = 0; i + 2 < fields.mfg_data_len; i++) {
-        if (fields.mfg_data[i] == 0x88 && fields.mfg_data[i+1] == 0x99 && fields.mfg_data[i+2] == 0x10) return true;
     }
     return false;
 }
 static int connect_peer(const ble_addr_t *address) {
     connecting = true;
+    connect_attempts++;
     gatt_stage = "gatt_connect";
-    int rc = ble_gap_connect(own_address, address, 10000, NULL, gap_event, NULL);
+    int rc = ble_gap_connect(own_address, address, 12000, NULL, gap_event, NULL);
     if (rc) finish_gatt(rc);
     return rc;
 }
 static void found_lamp(const ble_addr_t *address, const uint8_t *data, int length, int rssi, int event_type) {
     scan_reports++;
     bool known = known_peer && !memcmp(address->val, last_peer.val, sizeof(last_peer.val));
-    if (!maintain_gatt || connecting || (!known && !matches_lamp(data, length))) return;
+    bool named = matches_lamp(data, length);
+    if (!known && !named) return;
     scan_matches++;
+    last_peer_seen = esp_timer_get_time();
     peer_rssi = rssi; peer_event_type = event_type;
+    if (sampling && rssi != 127) {
+        rssi_count++; rssi_sum += rssi;
+        if (rssi < rssi_min) rssi_min = rssi;
+        if (rssi > rssi_max) rssi_max = rssi;
+    }
+    if (!maintain_gatt || connecting || !scanning) return;
     /* Suppress DISC_COMPLETE while switching from scanning to connecting. */
     connecting = true;
+    scanning = false;
     ble_gap_disc_cancel();
     last_peer = *address; have_peer = true; known_peer = true;
     connect_peer(address);
@@ -104,12 +130,14 @@ static int gap_event(struct ble_gap_event *event, void *arg) {
         case BLE_GAP_EVENT_EXT_DISC:
             found_lamp(&event->ext_disc.addr, event->ext_disc.data, event->ext_disc.length_data, event->ext_disc.rssi, event->ext_disc.props); break;
         case BLE_GAP_EVENT_DISC_COMPLETE:
-            if (!connecting) finish_gatt(BLE_HS_ETIMEOUT);
+            if (scanning && !connecting) { scanning = false; finish_gatt(sampling ? 0 : BLE_HS_ETIMEOUT); }
             break;
         case BLE_GAP_EVENT_CONNECT:
             connect_status = event->connect.status;
             if (event->connect.status) { finish_gatt(event->connect.status); break; }
             connection = event->connect.conn_handle;
+            connections_established++; last_connected = esp_timer_get_time();
+            connection_power_error = esp_ble_tx_power_set_enhanced(ESP_BLE_ENHANCED_PWR_TYPE_CONN, connection, ESP_PWR_LVL_P20);
             {
                 struct ble_gap_conn_desc desc;
                 if (!ble_gap_conn_find(connection, &desc)) {
@@ -118,14 +146,16 @@ static int gap_event(struct ble_gap_event *event, void *arg) {
             }
             if (!maintain_gatt) { ble_gap_terminate(connection, BLE_ERR_REM_USER_CONN_TERM); break; }
             service_start = service_end = write_handle = 0;
-            gatt_stage = "gatt_service";
+            lamp1_mtu = BLE_ATT_MTU_DFLT;
+            gatt_stage = "gatt_mtu";
             {
-                int rc = ble_gattc_disc_svc_by_uuid(connection, &service_uuid.u, on_service, NULL);
+                int rc = ble_gattc_exchange_mtu(connection, on_mtu, NULL);
                 if (rc) finish_gatt(rc);
             }
             break;
         case BLE_GAP_EVENT_DISCONNECT:
             disconnect_reason = event->disconnect.reason;
+            last_disconnected = esp_timer_get_time();
             if (event->disconnect.conn.conn_handle != connection) break;
             connection = BLE_HS_CONN_HANDLE_NONE; write_handle = 0; connecting = false;
             finish_gatt(BLE_HS_ENOTCONN); break;
@@ -141,7 +171,12 @@ static int gap_event(struct ble_gap_event *event, void *arg) {
     }
     return 0;
 }
-static void on_sync(void) { init_code = ble_hs_id_infer_auto(0, &own_address); synced = !init_code; }
+static void on_sync(void) {
+    init_code = ble_hs_id_infer_auto(0, &own_address);
+    init_power_error = esp_ble_tx_power_set_enhanced(ESP_BLE_ENHANCED_PWR_TYPE_INIT, 0, ESP_PWR_LVL_P20);
+    scan_power_error = esp_ble_tx_power_set_enhanced(ESP_BLE_ENHANCED_PWR_TYPE_SCAN, 0, ESP_PWR_LVL_P20);
+    synced = !init_code;
+}
 static void on_reset(int reason) {
     synced = false; advertising_configured = false;
     connection = BLE_HS_CONN_HANDLE_NONE; write_handle = 0;
@@ -239,6 +274,7 @@ static int await_gatt(TickType_t timeout) {
     return BLE_HS_ETIMEOUT;
 }
 static void close_incomplete_gatt(void) {
+    scanning = false;
     ble_gap_disc_cancel(); ble_gap_conn_cancel();
     while (xSemaphoreTake(gatt_done, 0) == pdTRUE) {}
     if (connection != BLE_HS_CONN_HANDLE_NONE) {
@@ -246,6 +282,8 @@ static void close_incomplete_gatt(void) {
         if (!rc) xSemaphoreTake(gatt_done, pdMS_TO_TICKS(2000));
     }
     connecting = false;
+    connection = BLE_HS_CONN_HANDLE_NONE;
+    write_handle = service_start = service_end = 0;
     while (xSemaphoreTake(gatt_done, 0) == pdTRUE) {}
 }
 static int ensure_gatt(void) {
@@ -254,7 +292,7 @@ static int ensure_gatt(void) {
     while (xSemaphoreTake(gatt_done, 0) == pdTRUE) {}
     if (have_peer) {
         int rc = connect_peer(&last_peer);
-        if (!rc) rc = await_gatt(pdMS_TO_TICKS(14000));
+        if (!rc) rc = await_gatt(pdMS_TO_TICKS(24000));
         if (!rc) return 0;
         gatt_failure_stage = gatt_stage;
         close_incomplete_gatt();
@@ -264,10 +302,11 @@ static int ensure_gatt(void) {
     }
     connecting = false;
     gatt_stage = "gatt_scan";
-    struct ble_gap_disc_params params = { .passive = 0, .itvl = 0x60, .window = 0x30, .filter_duplicates = 0 };
-    int rc = ble_gap_disc(own_address, 6000, &params, gap_event, NULL);
-    if (rc) return rc;
-    rc = await_gatt(pdMS_TO_TICKS(20000));
+    scanning = true;
+    struct ble_gap_disc_params params = { .passive = 0, .itvl = 0x30, .window = 0x30, .filter_duplicates = 0 };
+    int rc = ble_gap_disc(own_address, 8000, &params, gap_event, NULL);
+    if (rc) { scanning = false; return rc; }
+    rc = await_gatt(pdMS_TO_TICKS(30000));
     if (rc) {
         gatt_failure_stage = gatt_stage;
         close_incomplete_gatt();
@@ -298,6 +337,18 @@ static void gatt_worker(void *arg) {
                 reply.code = ble_gap_terminate(connection, BLE_ERR_REM_USER_CONN_TERM);
                 if (!reply.code && xSemaphoreTake(gatt_done, pdMS_TO_TICKS(2000)) != pdTRUE) reply.code = BLE_HS_ETIMEOUT;
             }
+        } else if (job.kind == JOB_SAMPLE) {
+            maintain_gatt = false;
+            if (job.length[0] == 6) { memcpy(last_peer.val, job.data[0], 6); last_peer.type = job.peer_type; known_peer = true; }
+            rssi_count = rssi_sum = 0; rssi_min = 127; rssi_max = -127;
+            while (xSemaphoreTake(gatt_done, 0) == pdTRUE) {}
+            gatt_stage = "rssi_sample"; sampling = scanning = true;
+            struct ble_gap_disc_params params = { .passive = 0, .itvl = 0x30, .window = 0x30, .filter_duplicates = 0 };
+            reply.code = ble_gap_disc(own_address, 30000, &params, gap_event, NULL);
+            if (!reply.code) reply.code = await_gatt(pdMS_TO_TICKS(33000));
+            sampling = scanning = false; ble_gap_disc_cancel();
+            reply.sample = true; reply.rssi_count = rssi_count; reply.rssi_sum = rssi_sum;
+            reply.rssi_min = rssi_min; reply.rssi_max = rssi_max;
         } else if (job.kind == JOB_MAINTAIN) {
             if (job.length[0] == 6) {
                 memcpy(last_peer.val, job.data[0], 6); last_peer.type = job.peer_type;
@@ -311,7 +362,8 @@ static void gatt_worker(void *arg) {
                 reply.code = ensure_gatt();
                 for (int i = 0; i < job.count && !reply.code; i++) {
                     gatt_stage = "gatt_write";
-                    reply.code = ble_gattc_write_no_rsp_flat(connection, write_handle, job.data[i], job.length[i]);
+                    reply.code = job.length[i] > ble_att_mtu(connection) - 3 ? BLE_HS_EMSGSIZE :
+                        ble_gattc_write_no_rsp_flat(connection, write_handle, job.data[i], job.length[i]);
                     if (!reply.code) { reply.completed++; vTaskDelay(pdMS_TO_TICKS(60)); }
                 }
             }
@@ -356,6 +408,7 @@ bool monitor_lights_command(const char *json) {
     else if (!strcmp(kind->valuestring, "release")) job.kind = JOB_RELEASE;
     else if (!strcmp(kind->valuestring, "ping")) job.kind = JOB_PING;
     else if (!strcmp(kind->valuestring, "maintain")) job.kind = JOB_MAINTAIN;
+    else if (!strcmp(kind->valuestring, "sample")) job.kind = JOB_SAMPLE;
     else { cJSON_Delete(root); return true; }
     cJSON *frames = cJSON_GetObjectItem(root, "packets");
     cJSON *target = cJSON_GetObjectItem(root, "target");
@@ -368,7 +421,7 @@ bool monitor_lights_command(const char *json) {
         valid = cJSON_IsString(packet) && (job.length[i] = decode_hex(packet->valuestring, job.data[i])) > 0;
         if (job.kind == JOB_ADV && job.length[i] != 31) valid = false;
     }
-    if (valid && job.kind == JOB_MAINTAIN) {
+    if (valid && (job.kind == JOB_MAINTAIN || job.kind == JOB_SAMPLE)) {
         cJSON *peer = cJSON_GetObjectItem(root, "peer"), *peer_type = cJSON_GetObjectItem(root, "peerType");
         if (cJSON_IsString(peer) && strlen(peer->valuestring)) {
             job.length[0] = decode_hex(peer->valuestring, job.data[0]);
@@ -378,10 +431,12 @@ bool monitor_lights_command(const char *json) {
     }
     if (valid && job.kind == JOB_RELEASE) {
         maintain_gatt = false;
+        scanning = false;
         ble_gap_disc_cancel(); ble_gap_conn_cancel();
         finish_gatt(BLE_HS_ENOTCONN);
     }
     if (valid && job.kind == JOB_MAINTAIN && job.length[0] == 6 && !write_handle) {
+        scanning = false;
         ble_gap_disc_cancel(); ble_gap_conn_cancel();
         finish_gatt(BLE_HS_ENOTCONN);
     }
@@ -394,9 +449,25 @@ bool monitor_lights_command(const char *json) {
 bool monitor_lights_pop_reply(char *reply, size_t length) {
     light_reply_t result;
     if (xQueueReceive(replies, &result, 0) != pdTRUE) return false;
+    if (result.sample) {
+        snprintf(reply, length, "{\"v\":1,\"type\":\"light_result\",\"id\":%d,\"ok\":%s,\"code\":%d,\"rssiCount\":%d,\"rssiSum\":%d,\"rssiMin\":%d,\"rssiMax\":%d}\n",
+            result.id, result.code ? "false" : "true", result.code, result.rssi_count, result.rssi_sum, result.rssi_min, result.rssi_max);
+        return true;
+    }
     snprintf(reply, length, "{\"v\":1,\"type\":\"%s\",\"id\":%d,\"ok\":%s,\"code\":%d,\"completed\":%d,\"stage\":\"%s\",\"instance\":%d,\"target\":%d}\n", result.event ? "light_event" : "light_result", result.id, result.code ? "false" : "true", result.code, result.completed, result.stage ? result.stage : "queue", result.instance, result.target);
     return true;
 }
 void monitor_lights_diagnostics(char *json, size_t length) {
     snprintf(json, length, "\"lightControl\":true,\"radioReady\":%s,\"radioBusy\":%s,\"radioError\":%d,\"radioPhase\":%d,\"lamp1Connected\":%s,\"lamp1Maintained\":%s,\"lamp1Error\":%d,\"radioStage\":\"%s\",\"radioInstance\":%d,\"scanReports\":%u,\"scanMatches\":%u,\"connectStatus\":%d,\"disconnectReason\":%d,\"serviceStatus\":%d,\"characteristicStatus\":%d,\"gattFailureStage\":\"%s\",\"peerType\":%d,\"connectionHandle\":%u,\"writeHandle\":%u,\"peerRssi\":%d,\"peerEventType\":%d,\"connectionInterval\":%d,\"connectionLatency\":%d,\"radioBoot\":%lu", synced && !init_code ? "true" : "false", adv_busy || gatt_busy ? "true" : "false", init_code, init_phase, connection != BLE_HS_CONN_HANDLE_NONE && write_handle ? "true" : "false", maintain_gatt ? "true" : "false", lamp1_error, gatt_busy ? gatt_stage : radio_stage, radio_instance, scan_reports, scan_matches, connect_status, disconnect_reason, service_status, characteristic_status, gatt_failure_stage, last_peer.type, connection, write_handle, peer_rssi, peer_event_type, connection_interval, connection_latency, (unsigned long)radio_boot);
+    int64_t now = esp_timer_get_time();
+    size_t used = strlen(json);
+    snprintf(json + used, length - used, ",\"connectAttempts\":%u,\"connectionsEstablished\":%u,\"peerSeenAgeMs\":%lld,\"connectedAgeMs\":%lld,\"disconnectedAgeMs\":%lld,\"initPowerError\":%d,\"scanPowerError\":%d,\"connectionPowerError\":%d,\"peerAddress\":\"%02X:%02X:%02X:%02X:%02X:%02X\"",
+        connect_attempts, connections_established,
+        last_peer_seen ? (long long)((now - last_peer_seen) / 1000) : -1LL,
+        last_connected ? (long long)((now - last_connected) / 1000) : -1LL,
+        last_disconnected ? (long long)((now - last_disconnected) / 1000) : -1LL,
+        init_power_error, scan_power_error, connection_power_error,
+        last_peer.val[5], last_peer.val[4], last_peer.val[3], last_peer.val[2], last_peer.val[1], last_peer.val[0]);
+    used = strlen(json);
+    snprintf(json + used, length - used, ",\"observedLampName\":\"%s\",\"lamp1Mtu\":%u", observed_lamp_name, lamp1_mtu);
 }

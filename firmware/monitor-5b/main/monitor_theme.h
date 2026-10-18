@@ -65,7 +65,14 @@ void ui_status_set(ui_status_t *status, const char *text, uint32_t dot_color, ui
 typedef struct {
     lv_obj_t *card, *dot, *kind, *name, *hardware, *value, *percent, *total, *bar, *minimum, *maximum;
     int width, height;
+    bool compact; /* half-height overview cell: name, value and bar only */
+    const lv_font_t *value_font; /* largest value font; a long reading steps down */
     char type[24];
 } ui_sensor_card_t;
 void ui_sensor_card_build(ui_sensor_card_t *card, lv_obj_t *parent, int x, int y, int w, int h);
+/* Overview slots size their text like the Windows overview: name and value fonts from the slot's scales. */
+void ui_sensor_card_fonts(ui_sensor_card_t *card, const lv_font_t *name, const lv_font_t *value);
+/* The board's font closest to px, limited to [lo, hi] (sizes in px; bold faces from 26 up). */
+const lv_font_t *ui_font_near(int px, int lo, int hi);
+const lv_font_t *ui_font_smaller(const lv_font_t *font);
 void ui_sensor_card_update(ui_sensor_card_t *card, cJSON *item, bool show_minmax);

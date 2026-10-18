@@ -20,6 +20,9 @@
   <button class="picture" disabled={busy} onclick={() => change(() => window.api.chooseScreenBackground())}><Icon name="image" size={13}/>{appearance.hasImage ? '更换背景' : '图片背景'}</button>
   {#if appearance.hasImage}<button class="clear" title="恢复默认背景" disabled={busy} onclick={() => change(() => window.api.clearScreenBackground())}>清除</button>{/if}
   {#if error}<span class="error" role="alert">{error}</span>{/if}
+  {#if appearance.deviceBackground?.state === 'sending'}<span class="firmware-note">正在发送到 ESP32…</span>
+  {:else if appearance.deviceBackground?.state === 'shown'}<span class="firmware-note">ESP32 已显示背景{appearance.deviceBackground.size === '256×150' ? '（256×150 精简版，为界面保留内存；板卡运行正常）' : ''}</span>
+  {:else if appearance.deviceBackground?.state === 'failed'}<span class="error" role="alert">ESP32 未显示背景：{appearance.deviceBackground.message}</span>{/if}
   {#if appearance.requiresFirmware}<span class="firmware-note">实体图片背景需要更新板卡固件；安装主机 EXE 不会刷板。</span>{/if}
 </div>
 <style>

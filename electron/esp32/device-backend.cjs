@@ -26,7 +26,10 @@ function startDeviceBackend({ configStore, providerManager, systemMonitorClient,
   const preview = new PreviewHost(controller, message => command(message));
   function setTheme(theme) { controller.settings.preferences({ ...controller.settings.data.prefs, dark: theme !== 'light' }); }
   let background = {revision:'', bytes:null};
-  function setBackground(bytes, revision) { background = {bytes, revision:revision || ''}; preview.setBackground(bytes, revision); }
+  // bytes: 512x300 RGB565; small: 256x150 for boards short on PSRAM. The transport picks one per board.
+  function setBackground(bytes, revision, small = null) { background = {bytes, small, revision:revision || ''}; backgroundState = null; preview.setBackground(bytes, revision); }
+  let backgroundState = null;
+  function onBackgroundState(state) { backgroundState = state; require('electron').app.screenAppearance?.notify?.(); }
   function command(message) {
     if (message.type === 'prefs') {
       const desired = configStore.get('screenAppearance')?.theme;
@@ -42,6 +45,23 @@ function startDeviceBackend({ configStore, providerManager, systemMonitorClient,
   }
   setTheme(configStore.get('screenAppearance')?.theme || (controller.settings.data.prefs.dark ? 'dark' : 'light'));
   const getFrame = () => controller.frame();
+  // Link events and the board's last hello go to .device-profile so USB problems can be diagnosed afterwards.
+  const linkLogFile = path.join(profile, 'esp32-link.log'), linkStatusFile = path.join(profile, 'esp32-link-status.json');
+  function linkLog(message) {
+    console.log(message);
+    try {
+      if (fs.existsSync(linkLogFile) && fs.statSync(linkLogFile).size > 512 * 1024) fs.renameSync(linkLogFile, linkLogFile + '.1');
+      fs.appendFileSync(linkLogFile, `${new Date().toISOString()} ${message}\n`);
+    } catch (_) {}
+  }
+  const linkStatusTimer = setInterval(() => {
+    if (!transport) return;
+    const report = { at: Date.now(), port: transport.path, ready: transport.ready, lastSeen: transport.lastSeen, lastAckAt: transport.lastAckAt,
+      assetPending: transport.assetPending, assetsLeft: transport.assets.length, backgroundRevision: transport.backgroundRevision,
+      backgroundFailures: transport.backgroundFailures || 0, wantedBackground: background.revision, diagnostics: transport.diagnostics };
+    try { fs.writeFileSync(linkStatusFile + '.tmp', JSON.stringify(report, null, 2)); fs.renameSync(linkStatusFile + '.tmp', linkStatusFile); } catch (_) {}
+  }, 2000);
+  linkStatusTimer.unref?.();
   function selectPage(value) { controller.navigate(value); }
   function closeLink() { lights?.stop(); lights = null; transport?.stop(); transport = null; }
   function disconnect() { auto = false; closeLink(); }
@@ -57,7 +77,7 @@ function startDeviceBackend({ configStore, providerManager, systemMonitorClient,
       closeLink();
       setTheme(configStore.get('screenAppearance')?.theme || (controller.settings.data.prefs.dark ? 'dark' : 'light'));
       transport = new DeviceTransport({ port: selected.port, SerialPort, getFrame, onNavigate: selectPage,
-        getBackground: () => background, onCommand: command,
+        getBackground: () => background, onBackgroundState, onCommand: command, log: linkLog,
         onMessage: message => lights?.onMessage(message) === true }).start();
       lights = new LightControl({ transport, profile });
       await lights.start();
@@ -83,11 +103,13 @@ function startDeviceBackend({ configStore, providerManager, systemMonitorClient,
   const status = () => ({ board: 'ESP32-S3-Touch-LCD-5B', width: 1024, height: 600, mode: live ? 'live' : 'passive',
     port: transport?.path || '', open: !!transport?.port?.isOpen, auto, candidates, connectionMessage,
     backgroundSupported: transport?.diagnostics?.background === true,
+    backgroundState: transport?.ready ? backgroundState : null,
+    backgroundSizes: transport?.diagnostics?.backgroundSizes === true,
     deviceAppearance: {dark:transport?.diagnostics?.dark,backgroundReady:transport?.diagnostics?.backgroundReady,freePsram:transport?.diagnostics?.freePsram},
     ready: !!transport?.ready && Date.now() - transport.lastSeen < 6000,
     system: { enabled: live && overviewDependencies(configStore.get('plugins') || [], configStore.get('compactOverview')).system,
       fresh: !!system && system.cached !== true, fetchedAt: system?.fetchedAt || null, error: systemError },
     page: controller.page, pages: controller.views.map((view, i) => ({ id: i, title: view.title })), frame: getFrame() });
-  return { getFrame, connect, disconnect, status, selectPage, setTheme, setBackground, preview, stop() { stopped = true; clearInterval(timer); translations.stop(); preview.stop(); closeLink(); } };
+  return { getFrame, connect, disconnect, status, selectPage, setTheme, setBackground, preview, stop() { stopped = true; clearInterval(timer); clearInterval(linkStatusTimer); translations.stop(); preview.stop(); closeLink(); } };
 }
 module.exports = { startDeviceBackend };

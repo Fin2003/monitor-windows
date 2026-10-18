@@ -9,21 +9,25 @@ class ScreenAppearance {
   get() {
     const saved = this.config.get('screenAppearance') || {};
     const hasImage = !!this.image(), device = app.esp32Backend?.status();
-    return {theme:saved.theme || this.config.get('theme') || 'dark', hasImage, revision:saved.revision || '', requiresFirmware:hasImage && !!device?.ready && !device.backgroundSupported};
+    // What the board did with the image: sending / shown / failed (with the board's reason).
+    const deviceBackground = hasImage && device?.ready ? device.backgroundState : null;
+    return {theme:saved.theme || this.config.get('theme') || 'dark', hasImage, revision:saved.revision || '', deviceBackground,
+      requiresFirmware:hasImage && !!device?.ready && (!device.backgroundSupported || (deviceBackground?.state === 'failed' && !device.backgroundSizes))};
   }
+  notify() { const appearance = this.render(); for (const win of BrowserWindow.getAllWindows()) win.webContents.send('screen-appearance-change', appearance); }
   render() { const image = this.image(); return {...this.get(), image:image ? image.toDataURL() : ''}; }
-  bitmap() {
+  bitmap(width = 512, height = 300) {
     const image = this.image();
     if (!image) return null;
-    const pixels = image.resize({width:512,height:300,quality:'best'}).toBitmap();
-    const rgb = Buffer.alloc(512 * 300 * 2);
-    for (let i = 0; i < 512 * 300; i++) rgb.writeUInt16LE(((pixels[i*4+2]>>3)<<11)|((pixels[i*4+1]>>2)<<5)|(pixels[i*4]>>3),i*2);
+    const pixels = image.resize({width,height,quality:'best'}).toBitmap();
+    const rgb = Buffer.alloc(width * height * 2);
+    for (let i = 0; i < width * height; i++) rgb.writeUInt16LE(((pixels[i*4+2]>>3)<<11)|((pixels[i*4+1]>>2)<<5)|(pixels[i*4]>>3),i*2);
     return rgb;
   }
   publish() {
     const appearance = this.render();
     app.esp32Backend?.setTheme(appearance.theme);
-    app.esp32Backend?.setBackground(this.bitmap(), appearance.revision);
+    app.esp32Backend?.setBackground(this.bitmap(), appearance.revision, this.bitmap(256, 150));
     for (const win of BrowserWindow.getAllWindows()) win.webContents.send('screen-appearance-change', appearance);
     return this.get();
   }

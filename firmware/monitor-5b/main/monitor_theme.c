@@ -237,6 +237,37 @@ void ui_sensor_card_build(ui_sensor_card_t *s, lv_obj_t *parent, int x, int y, i
     s->total = ui_label(s->card, w / 2, h - 62, w / 2 - UI_PAD, 24, &ui_font_20r, p->text2, LV_TEXT_ALIGN_RIGHT);
     s->minimum = ui_label(s->card, UI_PAD, h - 36, inner / 2, 24, &ui_font_20r, p->text2, LV_TEXT_ALIGN_LEFT);
     s->maximum = ui_label(s->card, w / 2, h - 36, w / 2 - UI_PAD, 24, &ui_font_20r, p->text2, LV_TEXT_ALIGN_RIGHT);
+    s->value_font = &ui_font_64b;
+    s->compact = h < 200;
+    if (s->compact) {
+        /* Two sensors stacked in one cell: name on top, reading and bar below. */
+        lv_obj_add_flag(s->kind, LV_OBJ_FLAG_HIDDEN); lv_obj_add_flag(s->hardware, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_y(s->dot, 20); lv_obj_set_pos(s->name, UI_PAD + 18, 10); lv_obj_set_width(s->name, inner - 18);
+        lv_obj_set_y(s->bar, h - 18); lv_obj_set_height(s->bar, 6);
+        s->value_font = &ui_font_44b;
+    }
+}
+
+static const struct { const lv_font_t *font; int px; } FONT_SIZES[] = {
+    {&ui_font_14r, 14}, {&ui_font_16m, 16}, {&ui_font_20m, 20}, {&ui_font_26b, 26}, {&ui_font_32b, 32}, {&ui_font_44b, 44}, {&ui_font_64b, 64},
+};
+const lv_font_t *ui_font_near(int px, int lo, int hi) {
+    const lv_font_t *best = NULL; int distance = 1 << 20;
+    for (size_t i = 0; i < sizeof(FONT_SIZES) / sizeof(FONT_SIZES[0]); i++) {
+        if (FONT_SIZES[i].px < lo || FONT_SIZES[i].px > hi) continue;
+        int d = abs(FONT_SIZES[i].px - px);
+        if (d < distance) { distance = d; best = FONT_SIZES[i].font; }
+    }
+    return best ? best : &ui_font_20m;
+}
+const lv_font_t *ui_font_smaller(const lv_font_t *font) {
+    for (size_t i = 1; i < sizeof(FONT_SIZES) / sizeof(FONT_SIZES[0]); i++)
+        if (FONT_SIZES[i].font == font) return FONT_SIZES[i - 1].font;
+    return font;
+}
+void ui_sensor_card_fonts(ui_sensor_card_t *s, const lv_font_t *name, const lv_font_t *value) {
+    if (name) { lv_obj_set_style_text_font(s->name, name, 0); lv_obj_set_height(s->name, name->line_height); }
+    if (value) s->value_font = value;
 }
 
 static double leading_number(const char *text) {
@@ -256,9 +287,10 @@ void ui_sensor_card_update(ui_sensor_card_t *s, cJSON *item, bool show_minmax) {
     ui_set_bg(s->dot, accent); ui_set_color(s->value, accent); ui_set_color(s->percent, accent);
     lv_obj_set_style_bg_color(s->bar, lv_color_hex(accent), LV_PART_INDICATOR);
 
-    const lv_font_t *font = ui_text_width(&ui_font_64b, value) <= s->width - 2 * UI_PAD ? &ui_font_64b : &ui_font_44b;
+    const lv_font_t *font = s->value_font ? s->value_font : &ui_font_64b;
+    for (int i = 0; i < 3 && ui_text_width(font, value) > s->width - 2 * UI_PAD; i++) font = ui_font_smaller(font);
     /* Sit clear of the bar, but never above the hardware line on shorter cards. */
-    int baseline = (int)fmax(s->height - 98, 108 + ui_font_64b.line_height - ui_font_64b.base_line);
+    int baseline = s->compact ? s->height - 30 : (int)fmax(s->height - 98, 108 + ui_font_64b.line_height - ui_font_64b.base_line);
     place_on_baseline(s->value, font, baseline);
     ui_set_text(s->value, *value ? value : "--");
 
@@ -274,9 +306,10 @@ void ui_sensor_card_update(ui_sensor_card_t *s, cJSON *item, bool show_minmax) {
     ui_set_visible(s->bar, isfinite(fill));
     if (lv_bar_get_value(s->bar) != bar_value) lv_bar_set_value(s->bar, bar_value, LV_ANIM_OFF);
 
-    ui_set_text(s->percent, pct_text); ui_set_visible(s->percent, *pct_text);
+    ui_set_text(s->percent, pct_text); ui_set_visible(s->percent, *pct_text && !s->compact);
     char total_text[48]; snprintf(total_text, sizeof(total_text), *total ? "共 %s" : "", total);
-    ui_set_text(s->total, total_text); ui_set_visible(s->total, *total);
+    ui_set_text(s->total, total_text); ui_set_visible(s->total, *total && !s->compact);
+    if (s->compact) show_minmax = false;
 
     char minimum[48], maximum[48];
     snprintf(minimum, sizeof(minimum), "最低 %s", *min_text ? min_text : "--");

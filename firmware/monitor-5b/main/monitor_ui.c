@@ -1030,10 +1030,14 @@ bool monitor_ui_apply(const char *json,int *sequence) {
     if(!cJSON_IsNumber(version)||version->valuedouble!=1){cJSON_Delete(root);return false;}
     const char *type=string(root,"type");
     if(!strncmp(type,"background_",11)) {
-        if(esp_lv_adapter_lock(100)!=ESP_OK){cJSON_Delete(root);return false;}
+        /* Always answer: -2 acknowledges, -3 rejects (main.c sends the reason), so the host never waits blind.
+         * Chunks only copy into the private pixel buffer (LVGL does not see it until background_end), so they
+         * skip the display lock; begin/end/clear touch LVGL and wait up to 1 s for a frame to finish drawing. */
+        if(!strcmp(type,"background_chunk")){bool ok=monitor_background_apply(root);cJSON_Delete(root);*sequence=ok?-2:-3;return true;}
+        if(esp_lv_adapter_lock(1000)!=ESP_OK){monitor_background_fail("display busy");cJSON_Delete(root);*sequence=-3;return true;}
         bool ok=monitor_background_apply(root);
         monitor_background_style(dashboard_panel);monitor_background_style(native_page_panel);
-        esp_lv_adapter_unlock();cJSON_Delete(root);if(ok)*sequence=-2;return ok;
+        esp_lv_adapter_unlock();cJSON_Delete(root);*sequence=ok?-2:-3;return true;
     }
     if(!strcmp(type,"prefs_set")) {
         if(esp_lv_adapter_lock(100)!=ESP_OK){cJSON_Delete(root);return false;}

@@ -140,7 +140,8 @@ class DisplayController {
       const slots=(this.current.config.compactOverview?.slots||[]).filter(Boolean);
       if(!Array.isArray(this.settings.data.channels))config.selectedProviders=[...new Set([...slots.filter(s=>s.kind==='coding').flatMap(codingChannelKeys),...config.selectedProviders])];
       if(!Array.isArray(this.settings.data.sensors))config.systemMonitor.selectedSensors=[...new Set([...slots.filter(s=>s.kind==='system').flatMap(s=>s.sensorIds||[]),...config.systemMonitor.selectedSensors])];
-      frame.dashboard=dashboard({...this.current,config});
+      // The overview layout follows the Windows 缩略总览 slots (settings.config blanks them for selections).
+      frame.dashboard=dashboard({...this.current,config:{...config,compactOverview:this.current.config.compactOverview}});
     } else frame.nativePage=nativePage(frame.group,{...this.current,config});
     const radarView=frame.dashboard?.radar||(frame.nativePage?.type==='radar'?frame.nativePage:null);
     if(radarView)radarView.manual=manualResets.pickerInfo({radar:this.current.radar,now:this.current.now||Date.now(),timeZone:this.radarZone(),list:manualResets.load(this.manualFile)});

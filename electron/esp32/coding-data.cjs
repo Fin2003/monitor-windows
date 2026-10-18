@@ -5,14 +5,12 @@ function countdown(ms) {
   const minutes = Math.ceil(ms / 60000), hours = Math.floor(minutes / 60);
   return hours >= 24 ? `${Math.floor(hours / 24)}天 ${hours % 24}时` : hours ? `${hours}时 ${minutes % 60}分` : `${minutes}分`;
 }
-function codingCards({ config = {}, cache = {}, now = Date.now(), pageSize = 2 } = {}) {
-  const channels = [...new Set([...(config.selectedProviders || []),
-    ...(config.compactOverview?.slots || []).filter(slot => slot?.kind === 'coding')
-      .flatMap(slot => [slot.channelKey, ...(slot.channelKeys || [])])].filter(Boolean))];
-  const cards = [];
-  for (const channel of channels) {
+const emptyCard = () => ({ name: 'Coding Plan', periods: ['5小时', '周', '月'].map(label => ({ label, pct: null, countdown: '—' })), center: { value: '—', unit: '' } });
+// One quota card for a channel key ("account" or "account:variant"); null when the account is missing or hidden.
+function codingCard(channel, { config = {}, cache = {}, now = Date.now() } = {}) {
+    if (!channel) return null;
     const id = channel.split(':')[0], account = (config.channelAccounts || []).find(item => item.id === id);
-    if (!account || account.enabled === false || config.accountDisplayEnabled?.[id] === false) continue;
+    if (!account || account.enabled === false || config.accountDisplayEnabled?.[id] === false) return null;
     const data = cache[channel]?.data || cache[id]?.data || {};
     const agent = channel.endsWith(':agent'), offset = agent ? 3 : 0;
     let periods;
@@ -44,12 +42,17 @@ function codingCards({ config = {}, cache = {}, now = Date.now(), pageSize = 2 }
     const next = Math.min(...periods.map(item => item.remaining).filter(value => value > 0));
     const minutes = Math.ceil(next / 60000), hours = Math.floor(minutes / 60);
     const balance = data.dynamicQuota ? (data.plans || []).find(plan => plan.balanceOnly) : null;
-    cards.push({ name: text(config.providerNames?.[channel] || config.providerNames?.[id] || account.label ||
+    return { name: text(config.providerNames?.[channel] || config.providerNames?.[id] || account.label ||
       ({ ...Object.fromEntries(Object.entries(require('../providers/quota-catalog.json')).map(([type,item])=>[type,item.name])), kimi: 'Kimi Coding', zhipu: '智谱 GLM', minimax: 'MiniMax', zenmux: 'ZenMux', commandcode: 'Command Code', volcengine: '火山方舟', opencodego: 'opencode Go', xfyun: '讯飞星火' }[account.type] || 'Coding Plan') + (agent ? ' Agent' : '')),
-      periods, center: balance ? { value: text(Number(balance.remaining).toLocaleString('en-US', { maximumFractionDigits: 2, notation: 'compact' }), 12), unit: text(balance.unit, 6) } : Number.isFinite(next) ? { value: String(hours || minutes), unit: hours ? '时' : '分' } : { value: '—', unit: '' } });
-  }
-  while (cards.length < pageSize) cards.push({ name: 'Coding Plan', periods: ['5小时', '周', '月'].map(label => ({ label, pct: null, countdown: '—' })), center: { value: '—', unit: '' } });
+      periods, center: balance ? { value: text(Number(balance.remaining).toLocaleString('en-US', { maximumFractionDigits: 2, notation: 'compact' }), 12), unit: text(balance.unit, 6) } : Number.isFinite(next) ? { value: String(hours || minutes), unit: hours ? '时' : '分' } : { value: '—', unit: '' } };
+}
+function codingCards({ config = {}, cache = {}, now = Date.now(), pageSize = 2 } = {}) {
+  const channels = [...new Set([...(config.selectedProviders || []),
+    ...(config.compactOverview?.slots || []).filter(slot => slot?.kind === 'coding')
+      .flatMap(slot => [slot.channelKey, ...(slot.channelKeys || [])])].filter(Boolean))];
+  const cards = channels.map(channel => codingCard(channel, { config, cache, now })).filter(Boolean);
+  while (cards.length < pageSize) cards.push(emptyCard());
   const page = Math.floor(now / 15000) % Math.ceil(cards.length / pageSize);
   return cards.slice(page * pageSize, page * pageSize + pageSize);
 }
-module.exports = { codingCards };
+module.exports = { codingCards, codingCard, emptyCard };
