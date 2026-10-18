@@ -196,8 +196,11 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
         : post.kind === 'forecast' ? 'announcement' : /\b(?:EOD|PST|PDT|tonight|tomorrow|by|at)\b/i.test(post.text) ? 'timing' : 'related';
     }
   }
+  // A forecast that came true (a completion post) keeps its color; only abandoned ones are superseded.
+  const fulfilled = new Set(events.filter(e => e.forecast && e.completion)
+    .flatMap(e => [e.forecast.id, ...(e.forecastIds || [])]));
   return { events, posts: decorated.sort((a, b) => Number(b.id === pinnedId) - Number(a.id === pinnedId) || b.publishedAt - a.publishedAt).map(post => {
-    const result = { ...post, pinned: post.id === pinnedId, superseded: post.kind === 'forecast' && !post.banked && post.id !== pinnedId };
+    const result = { ...post, pinned: post.id === pinnedId, superseded: post.kind === 'forecast' && !post.banked && post.id !== pinnedId && !fulfilled.has(post.id) };
     return { ...result, display: postPresentation(result) };
   }), latest, recentReset, pending, unresolved, banked };
 }

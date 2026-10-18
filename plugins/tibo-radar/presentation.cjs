@@ -81,7 +81,7 @@ function radarOutlook(snapshot, now = Date.now()) {
     if (reset.source === 'banked') return { label: '已重置', detail: '', late: false, badge: 'Banked', tone: 'banked',
       basis: `Tibo Banked Reset · ${formatRadarDate(reset.publishedAt, timeZone)}` };
     const quota = reset.source === 'quota';
-    return { label: '已重置', detail: '', late: false, badge: quota ? `${reset.before}%→${reset.after}%` : '', tone: 'confirmed',
+    return { label: '已重置', detail: '', late: false, badge: quota ? (Number.isFinite(reset.before) ? `${reset.before}%→${reset.after}%` : `额度 ${reset.after}%`) : '', tone: 'confirmed',
       basis: quota ? `监测账号周用量显著回落，检测于 ${formatRadarDate(reset.publishedAt, timeZone)}；不是 Tibo 完成通知，实际发生时间在两次采样之间` : `Tibo 完成通知 · ${formatRadarDate(reset.publishedAt, timeZone)}` };
   }
   if (!pending) return { label: '暂无预告', detail: '', late: false, badge: '', tone: 'muted' };
@@ -124,11 +124,28 @@ function radarPostExcerpt(text) {
   return text;
 }
 
-function latestRadarPosts(snapshot) {
-  return (Array.isArray(snapshot?.posts) ? snapshot.posts : [])
+// The newest colored reset post stays on top of the list until 4 hours after its reset finished
+// (a completion post: 4 hours after it; a related post without an event: 4 hours after posting).
+const RESET_PIN_AFTER_MS = 4 * 3600000, RESET_PIN_WINDOW_MS = 3 * 86400000;
+function resetPinId(posts, events, now) {
+  const post = posts.filter(p => p.display?.category === 'reset' && p.display.label && now - (finiteNumber(p.publishedAt) || 0) <= RESET_PIN_WINDOW_MS)
+    .sort((a, b) => (finiteNumber(b.publishedAt) || 0) - (finiteNumber(a.publishedAt) || 0))[0];
+  if (!post) return null;
+  const event = (Array.isArray(events) ? events : []).find(e => [e?.id, e?.post?.id, e?.forecast?.id, e?.completion?.id].includes(post.id));
+  const doneAt = post.kind === 'completion' ? finiteNumber(post.publishedAt)
+    : finiteNumber(event?.completion?.publishedAt);
+  if (doneAt !== null && doneAt !== undefined) return now - doneAt <= RESET_PIN_AFTER_MS ? post.id : null;
+  if (post.display.tone === 'forecast') return post.id;
+  return now - (finiteNumber(post.publishedAt) || 0) <= RESET_PIN_AFTER_MS ? post.id : null;
+}
+function latestRadarPosts(snapshot, now = Date.now()) {
+  const posts = (Array.isArray(snapshot?.posts) ? snapshot.posts : [])
     .filter(post => post && !post.manual && typeof post.text === "string" && post.text.trim())
-    .map(post => ({ ...post, display: post.display || postPresentation(post) }))
-    .slice().sort((a,b) => Number(!!b.pinned) - Number(!!a.pinned) || (finiteNumber(b.publishedAt) || 0) - (finiteNumber(a.publishedAt) || 0));
+    .map(post => ({ ...post, display: post.display || postPresentation(post) }));
+  const pinId = resetPinId(posts, snapshot?.events, now);
+  return posts.map(post => post.id === pinId ? { ...post, resetPinned: true } : post)
+    .sort((a,b) => Number(!!b.pinned) - Number(!!a.pinned) || Number(!!b.resetPinned) - Number(!!a.resetPinned)
+      || (finiteNumber(b.publishedAt) || 0) - (finiteNumber(a.publishedAt) || 0));
 }
 
 function postPresentation(post) {
@@ -144,7 +161,7 @@ function postPresentation(post) {
 
 function eventPresentation(event, now = Date.now()) {
   if (event.pairedBanked) return { label: 'Banked Reset', tone: 'banked' };
-  if (event.banked) return { label: 'Banked +1', tone: 'banked' };
+  if (event.banked) return { label:event.post ? 'Banked 相关' : 'Banked +1', tone:event.post ? 'related' : 'banked' };
   if (event.post) return { label: event.post.source === 'pending' ? '待分析' : '重置相关', tone: 'related' };
   if (event.completion) return { label: '已完成', tone: 'done' };
   if (!event.eta && event.timeWindow) return { label: '等待重置', tone: 'waiting' };

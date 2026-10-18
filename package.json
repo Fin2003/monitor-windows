@@ -1,6 +1,6 @@
 {
   "name": "monitor-windows",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Windows secondary-display monitor with Coding Plan, hardware sensors and Tibo Radar plugins",
   "main": "electron/main.js",
   "scripts": {

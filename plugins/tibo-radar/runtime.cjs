@@ -77,6 +77,13 @@ class TiboRadar {
           post.analysis = { ...semantic.validate(post.analysis.raw, post, replies), fingerprint: post.analysis.fingerprint,
             analyzedAt: post.analysis.analyzedAt };
         } catch (_) {}
+        // Validation rules improve (e.g. "by EOD" deadlines): re-check recent forecasts that ended without a time
+        // from the stored model output, without calling the model again.
+        else if (post.analysis?.source === 'llm' && post.analysis.raw && post.analysis.kind === 'forecast' && (!post.analysis.eta || post.analysis.eta.timeClass === 'prediction')
+          && post.publishedAt > Date.now() - 14 * 86400000) try {
+          const next = semantic.validate(post.analysis.raw, post, replies);
+          if (next.eta) post.analysis = { ...next, fingerprint: post.analysis.fingerprint, analyzedAt: post.analysis.analyzedAt, policyUpdatedAt: Date.now() };
+        } catch (_) {}
       }
     }
     const jevModel = this.jev?.get();
@@ -175,7 +182,7 @@ class TiboRadar {
     const state = buildState(posts, Date.now(), { useLLM: true, allowRules: !modelEnabled });
     return { ...state, config, manual: manualResets.pickerInfo({ radar: state, timeZone: displayTimeZone(config.displayTimeZone), list: manual }),
       meta: { ...this.meta, modelEnabled, analysisMode: modelEnabled ? config.analysisProvider : 'rules', modelName: activeModel?.model || '',
-        analysisPending: modelEnabled ? posts.filter(post => semantic.candidate(post) && !post.analysis).length : 0,
+        analysisPending: modelEnabled ? posts.filter(post => semantic.candidate(post, this.posts) && !post.analysis).length : 0,
         analysisProvider: config.analysisProvider, running: this.running, fetching: !!this.job,
         nextPollAt: this.nextPollAt || null, storedPosts: posts.length, backlog: this.pendingIds.size } };
   }
@@ -395,7 +402,6 @@ class TiboRadar {
     if (generation !== this.generation) return this.snapshot();
     await this.analyzePending(generation);
     if (generation !== this.generation) return this.snapshot();
-    if (generation !== this.generation) return this.snapshot();
     if (sourceOk && !this.meta.errors.some(e => e.startsWith('正文'))) this.meta.lastSuccess = Date.now();
     // Back off only when the timeline source fails; one unreadable post must not slow every cycle.
     this.failures = sourceOk ? 0 : (this.failures || 0) + 1;
@@ -446,7 +452,7 @@ class TiboRadar {
     const batchStarted = Date.now();
     for (const post of [...this.posts.values()].sort((a, b) => b.publishedAt - a.publishedAt)) {
       if (generation !== this.generation || this.controller?.signal.aborted || count >= 4 || Date.now() - batchStarted >= 150000) break;
-      if (!semantic.candidate(post) || (!this.config().repliesEnabled && post.replyToId)) continue;
+      if (!semantic.candidate(post, this.posts) || (!this.config().repliesEnabled && post.replyToId)) continue;
       const input = this.analysisInput(post);
       const changed = post.analysisInputFingerprint !== input.fingerprint && post.analysis?.kind === 'forecast'
         && post.publishedAt >= Date.now() - 3 * 86400000;
