@@ -8,7 +8,7 @@
 
 ## 启动
 
-- **EXE 安装：**[下载 Windows 安装包（1.3.1）](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.1/Monitor-Windows-1.3.1-Setup-x64.exe)，安装后选择显示器即可。已包含运行依赖，支持 Windows 10/11 x64。
+- **EXE 安装：**[下载 Windows 安装包（1.3.3）](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.3/Monitor-Windows-1.3.3-Setup-x64.exe)，安装后选择显示器即可。已包含运行依赖，支持 Windows 10/11 x64。
 - **源码启动：**下载 `main` 分支后双击 `start.bat`，首次自动安装依赖；也可先运行 `install-dependencies.bat`。[源码启动说明](docs/startup.md)
 - **ESP32 屏幕：**使用 [ESP32 版本](https://github.com/Fin2003/monitor-windows/tree/esp32)，该页提供固件下载和 AI 自动安装提示词。
 
