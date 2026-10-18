@@ -10,8 +10,8 @@ Windows 连接 ESP32 触摸屏，显示 AI 额度、硬件数据和 Tibo 雷达�
 
 适配 **Waveshare ESP32-S3-Touch-LCD-5B / 1024×600**，电脑需 Windows 10/11 x64。
 
-1. [下载屏幕固件 ZIP（1.3.1）](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.1/Monitor-ESP32-1.3.1-firmware-5B.zip)，解压后运行 `flash-firmware.bat`，刷入自己的屏幕。
-2. [下载 Windows ESP32 安装包（1.3.1）](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.1/Monitor-ESP32-1.3.1-Setup-x64.exe)，安装后选择自动连接。
+1. [下载屏幕固件 ZIP（1.3.3）](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.3/Monitor-ESP32-1.3.3-firmware-5B.zip)，解压后运行 `flash-firmware.bat`，刷入自己的屏幕。
+2. [下载 Windows ESP32 安装包（1.3.3）](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.3/Monitor-ESP32-1.3.3-Setup-x64.exe)，安装后选择自动连接。
 
 EXE 已包含运行依赖。**首次使用先刷固件；安装 EXE 不会自动刷屏幕。** [最新发布](https://github.com/Fin2003/monitor-windows/releases/latest) · [详细安装说明](docs/esp32-setup.md)
 
