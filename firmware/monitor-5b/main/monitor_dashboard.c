@@ -82,7 +82,10 @@ static void build_coding(coding_card_t *c, int x, int y, int w, int h, const lv_
     if (wide || tall) {
         int diameter = wide ? 192 : 240, gx = wide ? UI_PAD : (w - diameter) / 2;
         for (int i = 0; i < 3; i++) c->rings[i] = ui_ring(card, gx + 22 * i, 62 + 22 * i, diameter - 44 * i, 16, 270, colors[i]);
-        c->center = ui_label(card, gx + 55, 62 + diameter / 2 - 18, diameter - 110, 36, &ui_font_26b, p->text, LV_TEXT_ALIGN_CENTER);
+        /* The centre text stays inside the innermost ring's hole (diameter - 2*44 - 2*16 stroke), so it never
+         * overlaps the rings on smaller cells; update steps the font down when the text is too wide. */
+        const int hole = diameter - 88 - 32 - 8;
+        c->center = ui_label(card, gx + (diameter - hole) / 2, 62 + diameter / 2 - 18, hole, 36, &ui_font_26b, p->text, LV_TEXT_ALIGN_CENTER);
     }
     int left = wide ? 250 : UI_PAD, row_width = w - left - UI_PAD, top = tall ? 330 : 66;
     int pitch = (h - top - 8) / 3;
@@ -221,7 +224,7 @@ static void update_coding(coding_card_t *c, cJSON *code, const char *status, con
     if (c->center) {
         cJSON *center = cJSON_GetObjectItemCaseSensitive(code, "center");
         char text[32]; snprintf(text, sizeof(text), "%s%s", str(center, "value"), str(center, "unit"));
-        ui_set_text(c->center, text);
+        ui_fit_font(c->center, text, &ui_font_26b, &ui_font_20m);
     }
 }
 

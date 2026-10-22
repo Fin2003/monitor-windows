@@ -301,6 +301,19 @@ class TiboRadar {
     }
   }
 
+  // A newly saved model connection retries right away: the backoff after the old endpoint's 401/429 says
+  // nothing about the new one, and waiting on it meant nothing reached the new backend.
+  connectionChanged(provider = 'glm') {
+    for (const post of this.posts.values()) {
+      if ((post.analysisProvider === 'jev' ? 'jev' : 'glm') !== provider || !post.analysisError) continue;
+      post.analysisRetryAt = null; post.analysisError = null; post.analysisFailures = 0;
+    }
+    if (provider === 'jev') for (const post of this.posts.values()) { post.jevRetryAt = null; post.jevHourRetryAt = null; }
+    this.meta.errors = (this.meta.errors || []).filter(error => !error.startsWith(provider.toUpperCase()));
+    this.save();
+    if (this.running && !this.config().paused) this.refresh().catch(() => {});
+  }
+
   async refresh({forceReplies=false} = {}) {
     if (!this.running) return this.snapshot();
     if (this.job) return forceReplies ? this.job.then(()=>this.refresh({forceReplies:true})) : this.job;
