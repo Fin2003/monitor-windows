@@ -574,13 +574,14 @@ function setupIPC() {
 
   ipcMain.handle('tibo-radar-get', () => tiboRadar.snapshot());
   ipcMain.handle('tibo-model-get', () => tiboModel.get());
-  ipcMain.handle('tibo-model-save', (_event, value) => tiboModel.save(value));
+  // A new connection retries waiting posts at once (connectionChanged clears the old endpoint's backoff).
+  ipcMain.handle('tibo-model-save', async (_event, value) => { const saved = await tiboModel.save(value); tiboRadar?.connectionChanged('glm'); return saved; });
   const jevConfig = value => ({ name: value?.name || 'JEV', baseUrl: 'https://ai-gateway.vercel.sh/v1', format: 'evaluate', model: 'typesafe-ai/jev', apiKey: value?.apiKey || '', clearKey: !!value?.clearKey });
   ipcMain.handle('tibo-jev-get', () => {
     const saved = tiboJev.get();
     return { ...saved, ...jevConfig(saved), hasApiKey: saved.hasApiKey };
   });
-  ipcMain.handle('tibo-jev-save', (_event, value) => tiboJev.save(jevConfig(value)));
+  ipcMain.handle('tibo-jev-save', async (_event, value) => { const saved = await tiboJev.save(jevConfig(value)); tiboRadar?.connectionChanged('jev'); return saved; });
   ipcMain.handle('tibo-radar-refresh', () => tiboRadar.refresh({forceReplies:true}));
   ipcMain.handle('tibo-radar-manual-reset', (_event, value) => tiboRadar.manualReset({
     action: value?.action === 'undo' ? 'undo' : 'mark', id: String(value?.id || ''),
