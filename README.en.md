@@ -10,8 +10,8 @@ Windows host for an ESP32 touchscreen, with AI quotas, hardware metrics and Tibo
 
 For **Waveshare ESP32-S3-Touch-LCD-5B / 1024×600** on Windows 10/11 x64.
 
-1. [Download firmware ZIP (1.3.4)](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.4/Monitor-ESP32-1.3.4-firmware-5B.zip), extract it and run `flash-firmware.bat` to flash your screen.
-2. [Download ESP32 host EXE (1.3.4)](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.4/Monitor-ESP32-1.3.4-Setup-x64.exe), install it and choose Auto connect.
+1. [Download firmware ZIP (1.3.5)](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.5/Monitor-ESP32-1.3.5-firmware-5B.zip), extract it and run `flash-firmware.bat` to flash your screen.
+2. [Download ESP32 host EXE (1.3.5)](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.5/Monitor-ESP32-1.3.5-Setup-x64.exe), install it and choose Auto connect.
 
 The EXE includes runtime dependencies. **Flash the board before first use; installing the EXE does not flash it.** [Latest release](https://github.com/Fin2003/monitor-windows/releases/latest) · [Detailed setup](docs/esp32-setup.en.md)
 
