@@ -105,7 +105,17 @@ class ModelConnection {
       else if (c.format === 'chat') body.reasoning_effort = 'low';
     }
     try {
-      const response = await this.fetch(c.endpoint, { method: 'POST', headers, body: JSON.stringify(body), redirect: 'error', credentials: 'omit', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs) });
+      const send = () => this.fetch(c.endpoint, { method: 'POST', headers, body: JSON.stringify(body), redirect: 'error', credentials: 'omit', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs) });
+      let response = await send();
+      // Gateways (e.g. sub2api) answer 429/502/503/504 while an upstream or concurrency slot is busy; one quick
+      // retry usually succeeds, so a passing hiccup does not cost the post a long backoff.
+      if ([429, 502, 503, 504].includes(response.status) && !signal?.aborted) {
+        await new Promise(resolve => {
+          const timer = setTimeout(resolve, this.retryDelayMs ?? 4000);
+          signal?.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
+        });
+        if (!signal?.aborted) response = await send();
+      }
       if (!response.ok) throw new Error(`模型 HTTP ${response.status}`);
       const json = await response.json();
       const text = c.format === 'chat' ? json.choices?.[0]?.message?.content : c.format === 'anthropic' ? json.content?.filter(p => p.type === 'text').map(p => p.text).join('\n') : json.output?.flatMap(p => p.content || []).filter(p => p.type === 'output_text').map(p => p.text).join('\n');

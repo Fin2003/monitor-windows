@@ -150,8 +150,10 @@ function latestRadarPosts(snapshot, now = Date.now()) {
 
 function postPresentation(post) {
   const excerpt = radarPostExcerpt(post.text || post.keyText || '');
-  if (post.banked) return { label:({credited:'Banked +1',confirmation:'Banked 确认',announcement:'Banked 预告',timing:'时间补充',related:'Banked 相关'})[post.bankedRole] || 'Banked 相关',
-    tone:post.bankedCredit ? 'banked' : post.bankedRole === 'announcement' ? 'forecast' : 'ordinary', category:'banked', excerpt };
+  // Snapshots saved before roles existed: a banked completion is the credit itself.
+  const legacyCredit = !post.bankedRole && post.kind === 'completion';
+  if (post.banked) return { label:({credited:'Banked +1',confirmation:'Banked 确认',announcement:'Banked 预告',timing:'时间补充',related:'Banked 相关'})[post.bankedRole] || (legacyCredit ? 'Banked +1' : 'Banked 相关'),
+    tone:post.bankedCredit || legacyCredit ? 'banked' : post.bankedRole === 'announcement' ? 'forecast' : 'ordinary', category:'banked', excerpt };
   if (!post.resetRelated) return { label: '', tone: 'ordinary', category: 'all', excerpt };
   if (post.kind === 'completion') return { label: '重置完成', tone: 'completed', category: 'reset', excerpt };
   if (post.superseded) return { label: '', tone: 'ordinary', category: 'reset', excerpt };

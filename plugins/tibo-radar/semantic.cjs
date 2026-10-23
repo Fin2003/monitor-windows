@@ -270,4 +270,37 @@ async function analyze(model, post, parents, replies = [], signal, timeoutMs = 6
     catch (invalid) { invalid.modelOutput = raw; throw invalid; }
   }
 }
-module.exports = { context, candidate, needsTimeContext, fingerprint, prompt, validate, wallTime, timeContext, analyze };
+// Provisional forecast while the model has not answered yet (gateway busy, retry pending): only unambiguous
+// wording, run through the same validator and policies as a model answer. A day word plus a clock
+// ("tomorrow before 10am PST"), a relative interval, an end-of-day deadline, or a day word alone (01:00 policy).
+const DAY_WORD = /\b(?:today|tonight|tomorrow|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i;
+const PAST_OR_QUESTION = /\?|\b(?:landed|shipped|deployed|rolled\s+out|went\s+out|is\s+(?:live|done|out)|(?:has|have|had)\s+(?:been\s+)?(?:reset|landed|shipped)|was\s+reset|completed|propagated|done)\b/i;
+function provisional(post, parents = []) {
+  const text = post.text || '';
+  if (post.author !== 'thsottiaux' || BANKED.test(text) || parents.some(p => BANKED.test(p.text || ''))) return null;
+  const resetThread = RESET.test(text) || (FOLLOW_UP.test(text) && parents.some(p => p.author === 'thsottiaux' && RESET.test(p.text || '')));
+  if (!resetThread) return null;
+  // Only plain future promises: reports of a finished reset and questions are left to the model.
+  if (PAST_OR_QUESTION.test(text)) return null;
+  const zone = /\bPST\b/.test(text) ? '-08:00' : /\bPDT\b/.test(text) ? '-07:00' : null;
+  const tz = { timezone: zone || 'America/Los_Angeles', timezoneSource: zone ? 'explicit' : 'assumed' };
+  const empty = { minutes: null, date: null, hour: null, minute: null };
+  let time = null;
+  const minutes = relativeMinutes(text), clock = replyClock(text);
+  if (minutes !== null) time = { ...empty, mode: 'relative', precision: 'minute', minutes, timezone: null, timezoneSource: 'unknown' };
+  else if (END_OF_DAY.test(text)) time = { ...empty, mode: 'wall', precision: 'date', ...tz };
+  else if (DAY_WORD.test(text)) {
+    const date = evidenceDay(tz, post, text).date;
+    if (!date) return null;
+    time = clock ? { ...empty, mode: 'wall', precision: 'minute', date, hour: clock.hour, minute: clock.minute, ...tz }
+      : { ...empty, mode: 'wall', precision: 'date', date, ...tz };
+  }
+  if (!time) return null;
+  try {
+    const analysis = validate({ kind: 'forecast', banked: false, forecastType: 'scheduled', evidence: text, timeEvidence: text,
+      time, confidence: 0.9, timeSourceId: post.id }, post, []);
+    if (!analysis.eta) return null;
+    return { ...analysis, source: 'provisional', eta: { ...analysis.eta, basis: `待模型确认 · ${analysis.eta.basis}` } };
+  } catch (_) { return null; }
+}
+module.exports = { context, candidate, needsTimeContext, fingerprint, prompt, validate, wallTime, timeContext, analyze, provisional };

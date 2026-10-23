@@ -311,7 +311,8 @@ class TiboRadar {
     if (provider === 'jev') for (const post of this.posts.values()) { post.jevRetryAt = null; post.jevHourRetryAt = null; }
     this.meta.errors = (this.meta.errors || []).filter(error => !error.startsWith(provider.toUpperCase()));
     this.save();
-    if (this.running && !this.config().paused) this.refresh().catch(() => {});
+    // A check already running may be past its analysis step: queue a fresh one behind it.
+    if (this.running && !this.config().paused) (this.job ? this.job.then(() => this.refresh()) : this.refresh()).catch(() => {});
   }
 
   async refresh({forceReplies=false} = {}) {
@@ -499,7 +500,11 @@ class TiboRadar {
       } catch (error) {
         if (generation !== this.generation || this.controller?.signal.aborted) break;
         post.analysisFailures = (post.analysisFailures || 0) + 1;
-        post.analysisRetryAt = Date.now() + Math.min(60, 5 * 2 ** Math.min(post.analysisFailures - 1, 4)) * 60000;
+        // Busy/unavailable gateways (429/5xx) recover quickly: retry within minutes, not the 5-60 min used for
+        // errors such as a rejected key or invalid output.
+        const transient = /HTTP (?:429|5\d\d)\b/.test(error.message);
+        post.analysisRetryAt = Date.now() + (transient ? Math.min(4, post.analysisFailures)
+          : Math.min(60, 5 * 2 ** Math.min(post.analysisFailures - 1, 4))) * 60000;
         post.analysisError = error.message;
         this.meta.errors.push(`${provider.toUpperCase()} ${post.id}：${error.message}`);
         // Bad post output is isolated; transport failures still stop this batch.

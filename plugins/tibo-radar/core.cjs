@@ -1,5 +1,6 @@
 const HOUR = 3600000;
 const { postPresentation } = require('./presentation.cjs');
+const { provisional } = require('./semantic.cjs');
 const { calendarWindow, timingRank, compatible } = require('./forecast-window.cjs');
 const RESET = /\breset(?:s|ting|ed|ing)?\b/i;
 const BANKED = /\bbanked\b|\breset credits?\b|\breset tokens?\b/i;
@@ -107,7 +108,8 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
     const parents = ancestors(p);
     const classification = { ...(useLLM
       ? p.analysis || (allowRules ? { ...classify(p, parents.some(q => RESET.test(q.text))), source: 'rules' }
-        : { kind: RESET.test(p.text) ? 'mention' : 'irrelevant', banked: false, eta: null, keyText: p.text, source: 'pending' })
+        // Waiting for the model: clear wording still gives a provisional forecast, so the status moves on.
+        : provisional(p, parents) || { kind: RESET.test(p.text) ? 'mention' : 'irrelevant', banked: false, eta: null, keyText: p.text, source: 'pending' })
       : classify(p, parents.some(q => RESET.test(q.text)))) };
     // Only generic acknowledgements inherit context, not explicit usage resets.
     const resetParent = parents.find(q => RESET.test(q.text));
@@ -170,10 +172,11 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
   }
   for (const e of events) {
     e.pairedBanked = !!(e.forecast && !e.forecast.banked && e.completion?.banked);
-    e.status = e.completion ? 'confirmed' : e.banked ? 'banked' : !e.eta || e.eta.timeClass === 'prediction' ? 'waiting' : now < e.eta.at ? 'scheduled' : now <= e.eta.at + 2 * HOUR ? 'overdue' : 'unconfirmed';
+    // A Banked event confirmed by a later reply ("All reset for everyone") is confirmed at that reply.
+    e.status = e.completion || (e.banked && e.confirmation) ? 'confirmed' : e.banked ? 'banked' : !e.eta || e.eta.timeClass === 'prediction' ? 'waiting' : now < e.eta.at ? 'scheduled' : now <= e.eta.at + 2 * HOUR ? 'overdue' : 'unconfirmed';
     e.observationUntil = e.eta && e.eta.timeClass !== 'prediction' ? e.eta.at + 2 * HOUR : null;
     if (e.post) e.status = e.post.source === 'pending' ? 'analyzing' : 'mention';
-    e.sortAt = Math.max(e.forecast?.publishedAt || 0, e.completion?.publishedAt || 0, e.post?.publishedAt || 0);
+    e.sortAt = Math.max(e.forecast?.publishedAt || 0, e.completion?.publishedAt || 0, e.post?.publishedAt || 0, e.banked ? e.confirmation?.publishedAt || 0 : 0);
   }
   events.sort((a, b) => b.sortAt - a.sortAt);
   const completed = events.filter(e => e.completion && !e.banked).map(e => e.completion);
@@ -191,7 +194,8 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
   for (const event of events.filter(e=>e.banked)) {
     for (const post of [event.forecast,event.completion,event.post,...(event.relatedPosts || [])].filter(Boolean)) {
       post.bankedEventId = event.id;
-      post.bankedCredit = post.id === (event.forecast || event.completion)?.id;
+      // A normal forecast closed by a Banked completion: that completion is the credit (Banked +1).
+      post.bankedCredit = post.id === (event.pairedBanked ? event.completion : (event.forecast || event.completion))?.id;
       post.bankedRole = post.bankedCredit ? 'credited' : post.id === event.confirmation?.id || post.kind === 'completion' ? 'confirmation'
         : post.kind === 'forecast' ? 'announcement' : /\b(?:EOD|PST|PDT|tonight|tomorrow|by|at)\b/i.test(post.text) ? 'timing' : 'related';
     }
