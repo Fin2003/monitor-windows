@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="chart-title chart-desc" data-mode="date" data-scale="linear" data-legend-position="top-left" style="stroke-width:3; font-family:'GH Star Hand'; background:#0d1117">
   <title id="chart-title">Star History — Fin2003/monitor-windows</title>
-  <desc id="chart-desc">Fin2003/monitor-windows has 1 stars as of 2026-10-25. Data before 2026-10-07 is reconstructed from currently active stargazers.</desc>
+  <desc id="chart-desc">Fin2003/monitor-windows has 1 stars as of 2026-10-26. Data before 2026-10-07 is reconstructed from currently active stargazers.</desc>
   <metadata id="project-metadata">
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
       <rdf:Description rdf:about=""><dc:creator>GH Star History for Actions</dc:creator><dc:source rdf:resource="https://github.com/kernalix7/GH-Star-History-for-Actions"/></rdf:Description>
@@ -31,22 +31,16 @@
     <g class="xaxis" transform="translate(0,490)" fill="none" font-size="10" text-anchor="middle">
       <path class="domain" stroke="#ffffff" d="M0.5,0.5H800.5" filter="url(#xkcdify)"/>
       <g class="tick" opacity="1" transform="translate(0.5,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Oct 07</text></g>
-      <g class="tick" opacity="1" transform="translate(89.38888888888889,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Fri 09</text></g>
-      <g class="tick" opacity="1" transform="translate(178.27777777777777,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Oct 11</text></g>
-      <g class="tick" opacity="1" transform="translate(267.16666666666663,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Tue 13</text></g>
-      <g class="tick" opacity="1" transform="translate(356.05555555555554,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Thu 15</text></g>
-      <g class="tick" opacity="1" transform="translate(444.94444444444446,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Sat 17</text></g>
-      <g class="tick" opacity="1" transform="translate(533.8333333333333,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Mon 19</text></g>
-      <g class="tick" opacity="1" transform="translate(622.7222222222223,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Wed 21</text></g>
-      <g class="tick" opacity="1" transform="translate(711.6111111111111,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Fri 23</text></g>
-      <g class="tick" opacity="1" transform="translate(800.5,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Oct 25</text></g>
+      <g class="tick" opacity="1" transform="translate(168.92105263157893,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Oct 11</text></g>
+      <g class="tick" opacity="1" transform="translate(463.65789473684214,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Oct 18</text></g>
+      <g class="tick" opacity="1" transform="translate(758.3947368421052,0)"><line stroke="#ffffff" y2="0"/><text class="axis-tick" y="6" dy="0.71em">Oct 25</text></g>
     </g>
     <g class="yaxis" fill="none" font-size="10" text-anchor="end">
       <path class="domain" stroke="#ffffff" d="M-1,490.5H0.5V0.5H-1" filter="url(#xkcdify)"/>
       <g class="tick" opacity="1" transform="translate(0,490.5)"><line stroke="#ffffff" x2="-1"/><text class="axis-tick" x="-7" dy="0.32em">0</text></g>
       <g class="tick" opacity="1" transform="translate(0,0.5)"><line stroke="#ffffff" x2="-1"/><text class="axis-tick" x="-7" dy="0.32em">1</text></g>
     </g>
-    <path class="xkcd-chart-xyline" d="M0,0C14.814814814814815,0,29.629629629629626,0,44.44444444444444,0C59.25925925925926,0,74.07407407407408,0,88.88888888888889,0C103.7037037037037,0,118.5185185185185,0,133.33333333333331,0C148.14814814814812,0,162.96296296296296,0,177.77777777777777,0C192.59259259259258,0,207.40740740740742,0,222.22222222222223,0C237.03703703703704,0,251.85185185185182,0,266.66666666666663,0C281.48148148148147,0,296.2962962962963,0,311.11111111111114,0C325.9259259259259,0,340.74074074074076,0,355.55555555555554,0C370.3703703703704,0,385.18518518518516,0,400,0C414.81481481481484,0,429.6296296296296,0,444.44444444444446,0C459.2592592592593,0,474.0740740740741,0,488.8888888888889,0C503.7037037037037,0,518.5185185185185,0,533.3333333333333,0C548.148148148148,0,562.9629629629629,0,577.7777777777777,0C592.5925925925926,0,607.4074074074074,0,622.2222222222223,0C637.0370370370371,0,651.851851851852,0,666.6666666666667,0C681.4814814814815,0,696.2962962962963,0,711.1111111111111,0C725.9259259259259,0,740.7407407407408,0,755.5555555555555,0C770.3703703703703,0,785.1851851851852,0,800,0" fill="none" stroke="#ff6b6b" filter="url(#xkcdify)"/>
+    <path class="xkcd-chart-xyline" d="M0,0C14.035087719298245,0,28.070175438596486,0,42.10526315789473,0C56.14035087719298,0,70.17543859649122,0,84.21052631578947,0C98.24561403508771,0,112.28070175438596,0,126.3157894736842,0C140.35087719298244,0,154.38596491228068,0,168.42105263157893,0C182.45614035087718,0,196.49122807017542,0,210.52631578947367,0C224.56140350877192,0,238.59649122807016,0,252.6315789473684,0C266.66666666666663,0,280.7017543859649,0,294.7368421052631,0C308.77192982456137,0,322.8070175438596,0,336.84210526315786,0C350.8771929824561,0,364.91228070175436,0,378.9473684210526,0C392.98245614035085,0,407.0175438596491,0,421.05263157894734,0C435.0877192982456,0,449.1228070175439,0,463.15789473684214,0C477.1929824561404,0,491.2280701754386,0,505.2631578947368,0C519.2982456140351,0,533.3333333333333,0,547.3684210526316,0C561.4035087719298,0,575.438596491228,0,589.4736842105262,0C603.5087719298245,0,617.5438596491227,0,631.578947368421,0C645.6140350877192,0,659.6491228070175,0,673.6842105263157,0C687.719298245614,0,701.7543859649122,0,715.7894736842105,0C729.8245614035087,0,743.859649122807,0,757.8947368421052,0C771.9298245614035,0,785.9649122807017,0,800,0" fill="none" stroke="#ff6b6b" filter="url(#xkcdify)"/>
 
     <g class="legend" data-position="top-left">
       <rect x="8" y="5" width="207" height="36" rx="5" ry="5" fill="#0d1117" fill-opacity="0.85" stroke="#ffffff" stroke-width="2" filter="url(#xkcdify)"/>
