@@ -10,7 +10,7 @@ internal sealed class NvidiaDirectThermalReader : IDisposable
     private static readonly long CacheLifetimeTicks = ToTicks(CacheLifetimeMilliseconds);
     private static readonly long ReadTimeoutTicks = ToTicks(ReadTimeoutMilliseconds);
     private readonly long[] _input;
-    private readonly long[] _output = new long[2];
+    private readonly long[] _output = new long[NvidiaThermalDecoder.ChannelCount];
     private readonly PawnIo _pawnIo;
     private readonly AutoResetEvent _readRequested = new(false);
     private readonly object _sync = new();
@@ -122,20 +122,14 @@ internal sealed class NvidiaDirectThermalReader : IDisposable
         hotspot2 = null;
         try
         {
-            int result = _pawnIo.ExecuteHr("ioctl_read_thermal_registers", _input, 3, _output, 2, out uint returned);
-            if (result != 0 || returned < 2) return false;
-            hotspot = Decode(_output[0]);
-            hotspot2 = Decode(_output[1]);
+            Array.Clear(_output);
+            int result = _pawnIo.ExecuteHr("ioctl_read_thermal_registers", _input, 3, _output, NvidiaThermalDecoder.ChannelCount, out uint returned);
+            if (result != 0 || returned != NvidiaThermalDecoder.ChannelCount) return false;
+            hotspot = NvidiaThermalDecoder.Maximum(_output);
+            hotspot2 = NvidiaThermalDecoder.Decode(_output[1]);
             return hotspot.HasValue || hotspot2.HasValue;
         }
         catch { return false; }
-    }
-
-    private static float? Decode(long raw)
-    {
-        uint value = (uint)raw;
-        uint whole = (value >> 8) & 0xFF;
-        return whole is 0 or 0xFF ? null : whole + (value & 0xFF) / 32.0f;
     }
 
     private static bool Elapsed(long now, long start, long duration) => now - start >= duration;

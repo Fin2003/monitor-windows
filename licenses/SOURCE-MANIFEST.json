@@ -28,13 +28,6 @@
     "archive_sha256": "cae1fcff491477a947dfd6017884be4a325e5a88c49be37acc5e608bb1dfc8df"
   },
   {
-    "project": "PawnIO.Modules",
-    "repository": "https://github.com/namazso/PawnIO.Modules",
-    "revision": "0a65f31fb914914b96d175d3e461eb4824ec277a",
-    "license": "LGPL-2.1-or-later",
-    "archive_sha256": "df8e6d2612b7e8f6c48e44b14926531ba713d5e273faa0888678c1a4dc55eb60"
-  },
-  {
     "project": "PawnIO",
     "repository": "https://github.com/namazso/PawnIO",
     "revision": "9d52965895588b0ffa3703b72eec75ba19f4ccc0",
@@ -111,5 +104,19 @@
     "version": "0.32.0",
     "repository": "https://github.com/justjake/quickjs-emscripten",
     "license": "MIT"
+  },
+  {
+    "project": "LibreHardwareMonitor NVIDIA module and thermal decoder",
+    "repository": "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor",
+    "revision": "feb0e0ee33cbc32aba6606aea7d1e9bf5ab8d5fd",
+    "license": "MPL-2.0; embedded PawnIO module LGPL-2.1-or-later",
+    "archive_sha256": "fb9d685c210bdb5989406d00beaecce53df7a1146b5402ab26bb937ec7b82a95"
+  },
+  {
+    "project": "PawnIO.Modules",
+    "repository": "https://github.com/namazso/PawnIO.Modules",
+    "revision": "7ae0e5187e1f75d11210f6fe7b7788a5b92921e6",
+    "license": "LGPL-2.1-or-later",
+    "archive_sha256": "f9544730c60ddfdfde2d35c4c0a92c7affa6d9c2aaf8a428e8bcd11ac388432d"
   }
 ]

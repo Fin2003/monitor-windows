@@ -101,7 +101,9 @@ function resetHistory(snapshot) {
       entries.push({
         at: completion.publishedAt,
         label: banked ? 'Banked' : 'Hard',
-        detail: clean(completion.keyText || completion.text),
+        detail: banked && event.forecast
+          ? `公告 ${formatRadarDate(event.forecast.publishedAt,zone)} · 到账确认 ${formatRadarDate(completion.publishedAt,zone)}\n${clean(completion.keyText || completion.text)}`
+          : clean(completion.keyText || completion.text),
         tone: banked ? 'banked' : 'done',
       });
 
