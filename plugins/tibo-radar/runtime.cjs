@@ -79,7 +79,9 @@ class TiboRadar {
         } catch (_) {}
         // Validation rules improve (e.g. "by EOD" deadlines): re-check recent forecasts that ended without a time
         // from the stored model output, without calling the model again.
-        else if (post.analysis?.source === 'llm' && post.analysis.raw && post.analysis.kind === 'forecast' && (!post.analysis.eta || post.analysis.eta.timeClass === 'prediction')
+        else if (post.analysis?.source === 'llm' && post.analysis.raw
+          && ((post.analysis.kind === 'forecast' && (!post.analysis.eta || post.analysis.eta.timeClass === 'prediction'))
+            || post.analysis.kind === 'completion') // Revisit present-tense announcements saved as completions.
           && post.publishedAt > Date.now() - 14 * 86400000) try {
           const next = semantic.validate(post.analysis.raw, post, replies);
           if (next.eta) post.analysis = { ...next, fingerprint: post.analysis.fingerprint, analyzedAt: post.analysis.analyzedAt, policyUpdatedAt: Date.now() };

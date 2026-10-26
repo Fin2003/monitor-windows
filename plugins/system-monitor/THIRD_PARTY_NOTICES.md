@@ -35,12 +35,26 @@ This plugin combines several independent open-source projects. Each project rema
 ## PawnIO.Modules
 
 - Project: https://github.com/namazso/PawnIO.Modules
-- NVIDIA GB20x module source: https://github.com/namazso/PawnIO.Modules/pull/77 (`0a65f31fb914914b96d175d3e461eb4824ec277a`).
+- NVIDIA module source: https://github.com/namazso/PawnIO.Modules at `7ae0e5187e1f75d11210f6fe7b7788a5b92921e6`.
 - License: LGPL-2.1-or-later.
 - Used for: the embedded NVIDIA direct-read module represented by `Resources/Nvidia.bin`.
-- Built with Pawn 4.1.7152 using the upstream CI flags: `-iinclude -C64 -;+ -(+ -p`.
-- The AMX payload is stored in PawnIO's unsigned-module container format for reproducible testing; production loading still requires an upstream-signed module.
-- `Resources/Nvidia.bin` SHA-256: `BA6D7BA030A5C1E9CBF859CE2E006953164400F6C86C5FFD2E042FAA0174C440`.
+- Signed binary from LibreHardwareMonitor revision `feb0e0ee33cbc32aba6606aea7d1e9bf5ab8d5fd`, `LibreHardwareMonitorLib/Resources/PawnIo/Nvidia.bin`.
+- `Resources/Nvidia.bin` SHA-256: `2A51262B7215BF3EA82C0F507BC4AF50243141F82542DFE611A885C71CE2629A`.
+- Six-channel decoding follows `PawnIo/Nvidia.cs` at that revision. `NvidiaThermalDecoder.cs` retains MPL-2.0; normal startup uses the signed module without replacing the installed PawnIO driver.
+- Matching source is included in `Monitor-1.3.6-sensor-third-party-sources.zip` alongside the existing hardware dependency archive.
+
+## NVIDIA connector input voltage
+
+`NvidiaConnectorVoltageReader.cs` is independently implemented. Interface IDs,
+buffer layouts and units were referenced from NVIDIA NVAPI documentation
+(https://docs.nvidia.com/nvapi/) and Shaderx/ConnectorWatch's DirectNvRails and
+architecture documentation (https://github.com/Shaderx/ConnectorWatch, MIT).
+No ConnectorWatch reader implementation is incorporated.
+
+The undocumented ABI is restricted to a single NVIDIA GPU, PCI device
+`0x2B8510DE`, subsystem `0x205710DE`, driver `610.88`. Other combinations report
+unavailable. The reading is the connector input voltage, not GPU core voltage;
+stale or unsupported readings are not substituted with estimates.
 
 The unrestricted PawnIO driver is never enabled by the normal startup path. To enable this optional path in a custom build, first compile the supplied PawnIO source with WDK, place the resulting driver in `engine/Resources/PawnIO-unrestricted.sys`, and update `ExperimentalHash` in `ExperimentalPawnIoManager.cs` to its SHA-256. The management page can then launch the script after an explicit user action and UAC confirmation; the change may require a reboot. The Linux backend does not install or use PawnIO.
 

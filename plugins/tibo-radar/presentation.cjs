@@ -105,10 +105,13 @@ function radarOutlook(snapshot, now = Date.now()) {
   const status = countdown || elapsed;
   const observation = late ? now <= until ? '延迟观察中' : '已超过两小时，继续监测' : '';
   const inferred = pending.eta.timeClass === 'inferred';
-  return { label: date.slice(-5), dateLabel: date.slice(0, 5), countdown, elapsed, inferred,
+  // Date-only announcements use an estimated end-of-day time, not an explicit clock.
+  const estimated = !inferred && !!pending.eta.inferredMidnight;
+  const time = date.slice(-5);
+  return { label: estimated ? `预计 ${time}` : time, time, dateLabel: date.slice(0, 5), countdown, elapsed, inferred, estimated,
     detail: date.slice(0, 5) + ' · ' + status, late,
-    badge: inferred ? late ? '预测已过' : '关联预测' : late ? '已超时' : '等待重置', tone: late ? 'overdue' : 'forecast',
-    basis: `${pending.eta.basis || '预计重置时间'} · ${observation || '到时无完成通知，观察两小时后仍继续监测'} · 尚无完成通知，不自动确认` };
+    badge: inferred ? late ? '预测已过' : '关联预测' : estimated ? late ? '预计已过' : '等待重置' : late ? '已超时' : '等待重置', tone: late ? 'overdue' : 'forecast',
+    basis: `${estimated ? '预计时间（原文未给出具体时刻，按默认规则推算） · ' : ''}${pending.eta.basis || '预计重置时间'} · ${observation || '到时无完成通知，观察两小时后仍继续监测'} · 尚无完成通知，不自动确认` };
 }
 
 const radarSentenceSegmenter = new Intl.Segmenter('en', {granularity:'sentence'});

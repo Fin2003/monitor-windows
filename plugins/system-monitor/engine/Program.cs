@@ -90,6 +90,7 @@ return 0;
 
 internal sealed class HardwareService : IDisposable
 {
+    private readonly SnapshotPoller<NvidiaConnectorVoltage> _connectorPoller;
     private Computer? _coreComputer;
     private Computer? _extendedComputer;
     private Computer? _storageComputer;
@@ -103,7 +104,6 @@ internal sealed class HardwareService : IDisposable
     private readonly Dictionary<int, string> _nvidiaHotspotStates = [];
     private readonly ExperimentalPawnIoManager _experimentalDriver = new();
     private readonly object _initializationSync = new();
-    private bool _experimentalThermalEnabled;
     private bool _directThermalEnabled;
     private readonly ConcurrentDictionary<string, DateTime> _nextHardwarePoll = new();
     private readonly ConcurrentDictionary<string, object> _hardwareTimings = new();
@@ -128,6 +128,9 @@ internal sealed class HardwareService : IDisposable
     public HardwareService(int port)
     {
         _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        NvidiaConnectorVoltageReader connector = new();
+        _connectorPoller = new("NVIDIA connector voltage", TimeSpan.FromSeconds(1), connector.Initialize, connector.Sample, () => { });
+        _connectorPoller.Start();
     }
 
     public async Task RunAsync()
@@ -298,6 +301,14 @@ internal sealed class HardwareService : IDisposable
         experimentalDriverRebootRequired = _experimentalDriver.RebootRequired,
         experimentalDriverMessage = _experimentalDriver.Message,
         nvidiaHotspot = CreateNvidiaHotspotDiagnostics(),
+        nvidiaConnectorVoltage = new
+        {
+            available = ConnectorIsFresh(),
+            sampledAt = _connectorPoller.SampledAt,
+            durationMs = _connectorPoller.DurationMs,
+            error = _connectorPoller.Error,
+            source = "NVAPI power monitor"
+        },
         capabilities = new
         {
             temperature = true,
@@ -347,9 +358,20 @@ internal sealed class HardwareService : IDisposable
             foreach (ISensor sensor in group) sensors.Add(CreateSensorNode(sensor, ref nodeId));
             if (group.Key == SensorType.Temperature)
                 AddNvidiaHotspotNode(hardware, group, nvidiaThermals, sensors, ref nodeId);
+            if (group.Key == SensorType.Voltage)
+                AddNvidiaConnectorNode(hardware, nvidiaThermals, sensors, ref nodeId);
             children.Add(new Dictionary<string, object?>
             {
                 ["id"] = nodeId++, ["Text"] = group.Key.ToString(), ["Min"] = "", ["Value"] = "", ["Max"] = "", ["Children"] = sensors
+            });
+        }
+        if (!hardware.Sensors.Any(sensor => sensor.SensorType == SensorType.Voltage))
+        {
+            List<object> voltage = [];
+            AddNvidiaConnectorNode(hardware, nvidiaThermals, voltage, ref nodeId);
+            if (voltage.Count > 0) children.Add(new Dictionary<string, object?>
+            {
+                ["id"] = nodeId++, ["Text"] = "Voltage", ["Min"] = "", ["Value"] = "", ["Max"] = "", ["Children"] = voltage
             });
         }
         foreach (IHardware subHardware in hardware.SubHardware) children.Add(CreateHardwareNode(subHardware, nvidiaThermals, ref nodeId));
@@ -358,6 +380,29 @@ internal sealed class HardwareService : IDisposable
             ["id"] = nodeId++, ["Text"] = hardware.Name, ["HardwareId"] = hardware.Identifier.ToString(),
             ["Min"] = "", ["Value"] = "", ["Max"] = "", ["Children"] = children
         };
+    }
+
+    private bool ConnectorIsFresh() => _connectorPoller.Snapshot is not null &&
+        string.IsNullOrEmpty(_connectorPoller.Error) &&
+        DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - _connectorPoller.SampledAt is >= 0 and < 5000;
+
+    private void AddNvidiaConnectorNode(IHardware hardware, IReadOnlyList<NvidiaThermalSnapshot> snapshots,
+        List<object> sensors, ref int nodeId)
+    {
+        string hardwareId = hardware.Identifier.ToString();
+        if (!hardwareId.StartsWith("/gpu-nvidia/", StringComparison.Ordinal) || !ConnectorIsFresh() ||
+            !int.TryParse(hardwareId.Split('/').Last(), out int index)) return;
+        NvidiaConnectorVoltage? sample = _connectorPoller.Snapshot;
+        NvidiaThermalSnapshot? gpu = snapshots.FirstOrDefault(item => item.GpuIndex == index);
+        if (sample is null || gpu is null || gpu.Bus != sample.Bus || gpu.Device != sample.Slot) return;
+        string id = $"{hardwareId}/voltage/16-pin";
+        if (!_syntheticSensors.TryGetValue(id, out SyntheticSensorState? state))
+        {
+            state = new(id, "GPU 16-Pin Voltage", "Voltage");
+            _syntheticSensors[id] = state;
+        }
+        state.Update(sample.Volts, sample.Channel);
+        sensors.Add(state.CreateNode(nodeId++));
     }
 
     private void AddNvidiaHotspotNode(IHardware hardware, IEnumerable<ISensor> existingSensors,
@@ -387,9 +432,7 @@ internal sealed class HardwareService : IDisposable
         {
             _experimentalDriver.MarkActive(reader.IsLoaded);
             if (!reader.IsLoaded)
-                _nvidiaHotspotStates[gpuIndex] = _experimentalDriver.Configured
-                    ? "pawnio-module-awaiting-signature"
-                    : "pawnio-module-unavailable";
+                _nvidiaHotspotStates[gpuIndex] = "pawnio-module-unavailable";
             if (reader.TryRead(out float? directHotspot, out float? directHotspot2))
             {
                 _nvidiaHotspotStates[gpuIndex] = "direct";
@@ -458,6 +501,8 @@ internal sealed class HardwareService : IDisposable
         {
             if (_syntheticSensors.TryGetValue(id, out SyntheticSensorState? synthetic))
             {
+                if (id.EndsWith("/voltage/16-pin", StringComparison.Ordinal) && !ConnectorIsFresh())
+                    throw new InvalidOperationException("Connector voltage is unavailable or stale.");
                 switch (action)
                 {
                     case "Get":
@@ -703,11 +748,10 @@ internal sealed class HardwareService : IDisposable
                 _nvidiaThermals = snapshots;
                 if (!configured)
                 {
-                    bool experimentalOptIn = File.Exists(Path.Combine(AppContext.BaseDirectory, "enable-experimental-pawnio.flag"));
                     bool hasRtx50 = snapshots.Any(gpu => NvidiaThermalProbe.IsRtx50Series(gpu.Name));
-                    _experimentalThermalEnabled = experimentalOptIn && hasRtx50;
-                    _directThermalEnabled = hasRtx50 && (experimentalOptIn || PawnIoDriver.IsInstalled);
-                    _experimentalDriver.EnsureConfigured(_experimentalThermalEnabled);
+                    // The signed upstream module uses the installed driver;
+                    // routine telemetry must not reconfigure a kernel service.
+                    _directThermalEnabled = hasRtx50 && PawnIoDriver.IsInstalled;
                     configured = true;
                 }
             }
@@ -806,6 +850,7 @@ internal sealed class HardwareService : IDisposable
         try { _pollTask?.Wait(TimeSpan.FromSeconds(3)); } catch { }
         try { _nvidiaPollTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
         bool storageStopped = _storagePoller?.Stop(TimeSpan.FromSeconds(2)) ?? true;
+        _connectorPoller.Stop(TimeSpan.FromSeconds(2));
         bool coreStopped = (_initializationTask?.IsCompleted ?? true) && (_pollTask?.IsCompleted ?? true);
         bool extendedStopped = _extendedInitializationTask?.IsCompleted ?? true;
         // Native calls cannot be cancelled. Do not close their handles or locks
@@ -831,6 +876,7 @@ internal sealed record StorageSnapshot(IReadOnlyList<object> Hardware, string Me
 
 internal sealed class SyntheticSensorState(string id, string name, string type)
 {
+    private string Format => type == "Voltage" ? "{0:F3} V" : "{0:F1} °C";
     private float _value;
     private float _min;
     private float _max;
@@ -855,10 +901,13 @@ internal sealed class SyntheticSensorState(string id, string name, string type)
     public object CreateNode(int nodeId) => new Dictionary<string, object?>
     {
         ["id"] = nodeId, ["Text"] = name, ["SensorId"] = id, ["Type"] = type,
-        ["Min"] = $"{_min:F1} °C", ["Value"] = $"{_value:F1} °C", ["Max"] = $"{_max:F1} °C",
+        ["Min"] = string.Format(CultureInfo.InvariantCulture, Format, _min),
+        ["Value"] = string.Format(CultureInfo.InvariantCulture, Format, _value),
+        ["Max"] = string.Format(CultureInfo.InvariantCulture, Format, _max),
         ["RawMin"] = _min, ["RawValue"] = _value, ["RawMax"] = _max,
-        ["Source"] = "NVAPI", ["ChannelIndex"] = _channelIndex, ["Children"] = Array.Empty<object>()
+        ["Source"] = id.Contains("/direct-hotspot", StringComparison.Ordinal) ? "PawnIO" : "NVAPI",
+        ["ChannelIndex"] = _channelIndex, ["Children"] = Array.Empty<object>()
     };
 
-    public object CreateResult() => new { result = "ok", value = _value, min = _min, max = _max, format = "{0:F1} °C" };
+    public object CreateResult() => new { result = "ok", value = _value, min = _min, max = _max, format = Format };
 }

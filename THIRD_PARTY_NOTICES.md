@@ -18,7 +18,7 @@ Thanks also to namazso for PawnIO and PawnIO.Modules.
 | hwinfo | f71ee147222e9b6d31cac7c079a8a390035cb7b2 | MIT · vendored in plugins/system-monitor/engine/third-party/hwinfo |
 | CapFrameX NvidiaThermal | f2bd8948697d272440ba4e7aa7e725d9fb464a2c | MIT · https://github.com/CXWorld/CapFrameX |
 | PawnIO | 2.2.0 source / 9d52965895588b0ffa3703b72eec75ba19f4ccc0 | GPL-2.0-or-later with upstream IOCTL linking exception · https://github.com/namazso/PawnIO |
-| PawnIO.Modules NVIDIA | 0a65f31fb914914b96d175d3e461eb4824ec277a | LGPL-2.1-or-later · https://github.com/namazso/PawnIO.Modules |
+| PawnIO.Modules NVIDIA | 7ae0e5187e1f75d11210f6fe7b7788a5b92921e6; signed binary distributed by LibreHardwareMonitor feb0e0ee33cbc32aba6606aea7d1e9bf5ab8d5fd | LGPL-2.1-or-later · https://github.com/namazso/PawnIO.Modules |
 | BlackSharp.Core | 1.1.0 | MPL-2.0 · https://github.com/Blacktempel/BlackSharp |
 | DiskInfoToolkit | 2.1.1 | MPL-2.0 · https://github.com/Blacktempel/DiskInfoToolkit |
 | RAMSPDToolkit-NDD | 1.5.0 | MPL-2.0 · https://github.com/Blacktempel/RAMSPDToolkit |
@@ -28,19 +28,26 @@ Thanks also to namazso for PawnIO and PawnIO.Modules.
 
 The MPL libraries are consumed without changes. Their source and the GPL/LGPL
 driver/module source, including build information and the PawnPP source, are
-provided as `Monitor-1.1.1-third-party-sources.zip`. These revisions are unchanged
-since 1.1.1, and every GitHub Release that ships the hardware engine attaches this
-archive next to its executable installers. Monitor application source is also supplied there
+provided as `Monitor-1.1.1-third-party-sources.zip`. Version 1.3.6 additionally supplies
+`Monitor-1.3.6-sensor-third-party-sources.zip` with the updated NVIDIA module source
+and the matching LibreHardwareMonitor revision for its signed binary and decoder.
+`NvidiaThermalDecoder.cs` is adapted under MPL-2.0 with its notice retained.
+Every release that ships this engine attaches both source archives. Monitor application source is also supplied there
 for both variants. Source links and package revisions are recorded in
 `licenses/SOURCE-MANIFEST.json`. Recipients can use the source under each
 upstream license independently of Monitor's ISC license.
 
 The experimental unrestricted driver is supplied as source only in 1.0.2.
 Its previously used binary could not be matched to an exact source revision,
-so this release does not redistribute that binary. The unsigned NVIDIA module
-remains opt-in; normal startup does not replace or install an experimental driver. To modify/rebuild the
+so this release does not redistribute that binary. The NVIDIA thermal module is now
+the upstream signed module; normal startup does not replace or install an experimental driver. To modify/rebuild the
 hardware adapter, use the application C# source and the accompanying third-party
 source archive. Third-party files are not relicensed as ISC.
+
+The independent 16-pin voltage reader references NVIDIA NVAPI documentation and
+Shaderx/ConnectorWatch interface declarations (MIT) for IDs, layouts and units.
+No reader implementation is copied. Compatibility is deliberately limited to
+the validated board/driver ABI documented in the system-monitor plugin notices.
 
 ## Interface and transport
 
