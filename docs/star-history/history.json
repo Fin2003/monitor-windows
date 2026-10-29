@@ -3,7 +3,7 @@
   "repository": "Fin2003/monitor-windows",
   "repositoryId": "1408529773",
   "repositoryCreatedAt": "2026-10-07",
-  "updatedAt": "2026-10-28T21:07:32.163Z",
+  "updatedAt": "2026-10-29T05:51:08.962Z",
   "observedFrom": "2026-10-07",
   "backfill": {
     "generatedAt": "2026-10-07T09:16:44.074Z",
@@ -118,6 +118,11 @@
     },
     {
       "date": "2026-10-28",
+      "count": 1,
+      "source": "observed"
+    },
+    {
+      "date": "2026-10-29",
       "count": 1,
       "source": "observed"
     }
