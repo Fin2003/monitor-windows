@@ -1,6 +1,6 @@
 const crypto = require('node:crypto');
 const VERSION = 7;
-const { calendarWindow, RANGE_HINT, resolveWindow, linkedTiming } = require('./forecast-window.cjs');
+const { calendarWindow, ordinaryTiming, broad, RANGE_HINT, resolveWindow, linkedTiming } = require('./forecast-window.cjs');
 const RESET = /\breset(?:s|ting|ed|ing)?\b/i;
 const CLOCK = /\b\d{1,2}:\d{2}\b|\b\d{1,2}\s*(?:am|pm)\b/i;
 const CALENDAR = /\b(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday|today|tomorrow|tonight)\b|\b\d{4}-\d{2}-\d{2}\b|\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}\b/i;
@@ -139,6 +139,7 @@ function validateOutput(raw, post, replies) {
     corroboration = {...c, url:`https://x.com/thsottiaux/status/${reply.id}`, applied:false};
   }
   let kind = raw.confidence >= 0.85 ? raw.kind : 'mention';
+  if (kind === 'forecast' && raw.banked && ordinaryTiming(raw.evidence, post.publishedAt)) raw = { ...raw, banked: false, alsoBanked: true };
   const todayReset = kind === 'completion' && !raw.banked && sourceId === post.id && !DONE_WORDING.test(post.text) && TODAY_RESET.exec(post.text);
   if (todayReset) {
     // "But today is a reset." is not a report that the reset happened: expect it by the end of today.
@@ -163,7 +164,7 @@ function validateOutput(raw, post, replies) {
   if (kind === 'forecast' && !raw.banked && raw.time.mode !== 'unknown') {
     if (!raw.timeEvidence) throw new Error('预计时间缺少原文证据');
     const declaredWindow = calendarWindow(post.text, post.publishedAt);
-    if (sourceId !== post.id && declaredWindow?.precision === 'week' && !linkedTiming(post, source)) throw new Error('周范围不能由未关联回复缩窄');
+    if (sourceId !== post.id && broad(declaredWindow) && !linkedTiming(post, source)) throw new Error('周范围不能由未关联回复缩窄');
     if (sourceId !== post.id && declaredWindow && raw.time.mode === 'wall'
       && (raw.time.date < declaredWindow.startDate || raw.time.date > declaredWindow.endDate)) throw new Error('回复日期不在主帖预告范围内');
     if (sourceId !== post.id) validateReplyTime(raw, post, source, replies, corroboration);
@@ -204,7 +205,7 @@ function validateOutput(raw, post, replies) {
       } catch (_) {}
     }
   }
-  return { kind, timeWindow: kind === 'forecast' && !raw.banked ? resolveWindow(post, replies) : null, banked: raw.banked, forecastType: kind === 'forecast' && !raw.banked ? eta ? 'scheduled' : 'unspecified' : raw.forecastType, eta, timeWarning, corroboration, keyText: [...new Set([raw.evidence, sourceId === post.id ? raw.timeEvidence : null].filter(Boolean))].join('\n'), source: 'llm', raw, analyzedAt: Date.now() };
+  return { kind, timeWindow: kind === 'forecast' && !raw.banked ? resolveWindow(post, replies) : null, banked: raw.banked, alsoBanked: !!raw.alsoBanked, forecastType: kind === 'forecast' && !raw.banked ? eta ? 'scheduled' : 'unspecified' : raw.forecastType, eta, timeWarning, corroboration, keyText: [...new Set([raw.evidence, sourceId === post.id ? raw.timeEvidence : null].filter(Boolean))].join('\n'), source: 'llm', raw, analyzedAt: Date.now() };
 }
 function replyClock(text) {
   const m = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i.exec(text);
@@ -276,7 +277,8 @@ function validate(raw, post, replies = []) {
   try { return validateOutput(raw, post, replies); }
   catch (error) { error.code = 'INVALID_MODEL_OUTPUT'; throw error; }
 }
-async function analyze(model, post, parents, replies = [], signal, timeoutMs = 60000) {
+// The long classification prompt can take a slow reasoning model more than a minute to answer.
+async function analyze(model, post, parents, replies = [], signal, timeoutMs = 175000) {
   const instruction = prompt(post, parents, replies);
   let raw;
   try {

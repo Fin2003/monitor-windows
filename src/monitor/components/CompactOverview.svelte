@@ -279,9 +279,9 @@
                 <div class="reset-value"><strong>{radarView.latestAge}</strong></div>
               </div>
               <div class="outlook-summary" class:actionable={canMark} role={canMark ? 'button' : undefined} tabindex={canMark ? 0 : undefined} title={canMark ? 'Tibo 没发完成推文？点击手动标记重置' : undefined} onclick={e => canMark && manualKey(e, 'mark')} onkeydown={e => canMark && manualKey(e, 'mark')}>
-                <div class="radar-label"><span>当前状态</span>{#if radarView.outlook.badge}<span class="outlook-tag {radarView.outlook.tone}">{#if radarView.outlook.tone !== 'confirmed' && radarView.outlook.tone !== 'banked'}<Icon name="clock" size={11} />{/if}{radarView.outlook.badge}</span>{/if}</div>
+                <div class="radar-label"><span>当前状态</span>{#if radarView.outlook.badge}<span class="outlook-tag {radarView.outlook.tone}">{#if radarView.outlook.tone !== 'confirmed' && radarView.outlook.tone !== 'banked'}<Icon name="clock" size={11} />{/if}{radarView.outlook.badge}</span>{/if}{#if radarView.outlook.type}<b class="radar-reset-type" class:banked={radarView.outlook.type === 'Banked'}>{radarView.outlook.type}</b>{/if}</div>
                 <strong class="outlook-time" class:late={radarView.outlook.late}>{radarView.outlook.label}</strong>
-                {#if radarView.outlook.detail}<small class="outlook-detail">{#if radarView.outlook.countdown || radarView.outlook.elapsed}<span>{radarView.outlook.dateLabel}</span><span class="outlook-tag countdown-tag" class:overdue={radarView.outlook.late}>{radarView.outlook.countdown || radarView.outlook.elapsed}</span>{:else}{radarView.outlook.detail}{/if}</small>{/if}
+                {#if radarView.outlook.detail}<small class="outlook-detail">{#if radarView.outlook.countdown || radarView.outlook.elapsed}<span>{radarView.outlook.dateLabel}</span><span class="outlook-tag countdown-tag" class:overdue={radarView.outlook.late}>{radarView.outlook.countdown || radarView.outlook.elapsed}</span>{#if radarView.outlook.range}<span class="outlook-tag">范围 {radarView.outlook.range}</span>{/if}{:else}{radarView.outlook.detail}{/if}</small>{/if}
               </div>
             </div>
           {:else if slot.cells === 1}

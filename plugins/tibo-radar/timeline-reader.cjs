@@ -14,6 +14,8 @@ function readPage(replies = false) {
 function pageState(page, replies) {
   let url;
   try { url = new URL(page.url); } catch (_) { return 'redirected'; }
+  // A failed navigation leaves Chromium's error page; that is the network, not an X redirect.
+  if (url.protocol === 'chrome-error:') return 'network_error';
   if (!['x.com','twitter.com'].includes(url.hostname)) return 'redirected';
   // X's login wall: /i/flow/login, /login, and since 2026-10 /i/jf/onboarding/web?mode=login.
   if (/\/i\/flow\/(?:login|signup)|\/i\/jf\/onboarding|\/login/.test(url.pathname)) return 'login_required';
@@ -31,6 +33,7 @@ const messages = {
   page_error:'X 页面返回加载错误，自动重试后仍未恢复',
   rate_limited:'X 请求频率受限，稍后重试',
   challenge:'X 要求人工验证，请打开 X 会话处理',
+  network_error:'X 网络连接失败，稍后自动重试',
   redirected:'X 页面发生跳转，不能确认回复列表',
   loading:'X 页面未返回帖子，无法确认回复覆盖',
   coverage_incomplete:'X 回复未覆盖预告前两天',
@@ -66,24 +69,29 @@ async function readTimeline(scraper, {replies=false, signal, pause=wait, timeout
   const combined=signal ? AbortSignal.any([signal,controller.signal]) : controller.signal;
   const run=fn=>{combined.throwIfAborted();return interrupted(fn(),combined);};
   const url=`https://x.com/thsottiaux${replies ? '/with_replies?lang=en' : ''}`;
-  let page={},state='loading',retried=false,scrolls=0,oldestAt=null;
+  let page={},state='loading',retried=false,scrolls=0,oldestAt=null,networkRetries=0;
   const requiredAt = replies && Number.isFinite(oldestRequiredAt) ? oldestRequiredAt : null;
-  const maxScrolls = requiredAt === null ? 3 : 8;
+  // X loads a few older replies per scroll; the two-day lookback needs many more than the plain read.
+  const maxScrolls = requiredAt === null ? 3 : 24;
+  let stalled = 0;
   const found=new Set();
   try {
     await run(()=>scraper.reloadPage(url));
     stage='读取帖子';loadedAt=Date.now();
-    for(let attempt=0;attempt<(requiredAt === null ? 10 : 15);attempt++) {
+    for(let attempt=0;attempt<(requiredAt === null ? 10 : 40);attempt++) {
       await pause(1200,combined);
       page=await run(()=>scraper.executeScript(readPage,replies));
       reads++;
       state=pageState(page,replies);
       if(state==='ready') {
+        const knownIds=found.size,knownOldest=oldestAt;
         for(const id of page.ids)found.add(id);
         if(Number.isFinite(page.oldestAt)) oldestAt=oldestAt === null ? page.oldestAt : Math.min(oldestAt,page.oldestAt);
+        // Scrolling that stops producing posts or older timestamps means the end of what X will serve.
+        stalled = found.size > knownIds || oldestAt !== knownOldest ? 0 : stalled+1;
         if(!replies || (requiredAt === null ? scrolls>=maxScrolls : oldestAt !== null && oldestAt<=requiredAt))
           return {...page,ids:[...found],retried,coverageStart:oldestAt};
-        if(scrolls>=maxScrolls) break;
+        if(scrolls>=maxScrolls || (requiredAt !== null && stalled>=4)) break;
         await run(()=>scraper.executeScript(()=>window.scrollBy(0,Math.max(innerHeight,800))));
         scrolls++;
       } else if(state==='page_error' && !retried) {
@@ -93,6 +101,11 @@ async function readTimeline(scraper, {replies=false, signal, pause=wait, timeout
           if(retry){retry.click();return true;}return false;
         }));
         if(!clicked) await run(()=>scraper.reloadPage(url));
+      } else if(state==='network_error' && networkRetries<2) {
+        // The scraper swallows load failures; give a transient outage a few seconds and load again.
+        networkRetries++;
+        await pause(3000,combined);
+        await run(()=>scraper.reloadPage(url));
       } else if(state!=='loading') break;
     }
     // Partial pages remain a warning: an error after scrolling is not full recovery.

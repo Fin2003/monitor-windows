@@ -1,6 +1,9 @@
 const DAY = 86400000;
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-const RANGE_HINT = /\b(?:this|next)\s+week\b|本周|这周|下周/i;
+const RANGE_HINT = /\b(?:this|next)\s+week\b|本周|这周|下周|\b(?:next|coming)\s+(?:couple\s+(?:of\s+)?|few\s+|\d+\s+|one\s+|two\s+|three\s+|four\s+|five\s+)?days\b/i;
+// "Next two days will be resets": a span starting on the publication date (Pacific), not a calendar week.
+const SPAN = /\b(?:next|coming)\s+(?:(couple)\s+(?:of\s+)?|(few)\s+|(\d+|one|two|three|four|five)\s+)?days\b/i;
+const NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, couple: 2, few: 3 };
 function calendarWindow(text, publishedAt) {
   if (!Number.isFinite(publishedAt)) return null;
   const local = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(publishedAt);
@@ -15,10 +18,23 @@ function calendarWindow(text, publishedAt) {
     const target = next ? monday + (7 + (day + 6) % 7) * DAY : /\bthis\b|本周|这周/i.test(text) ? monday + ((day + 6) % 7) * DAY : base + ((day - dow + 7) % 7) * DAY;
     return { precision: 'date', startDate: date(target), endDate: date(target), label: (named || chinese)[0], timezone: 'America/Los_Angeles' };
   }
+  const span = SPAN.exec(text);
+  if (span) {
+    const word = (span[1] || span[2] || span[3] || 'couple').toLowerCase();
+    const days = Math.min(7, Math.max(1, NUMBERS[word] || Number(word) || 2));
+    return { precision: 'range', startDate: date(base), endDate: date(base + days * DAY), label: `未来${days}天`, timezone: 'America/Los_Angeles' };
+  }
   if (!RANGE_HINT.test(text)) return null;
   const start = monday + (next ? 7 : 0) * DAY;
   return { precision: 'week', startDate: date(start), endDate: date(start + 6 * DAY), label: next ? '下周' : '本周', timezone: 'America/Los_Angeles' };
 }
+// A forecast whose own evidence names ordinary resets with timing ("Next two days will be resets") stays an
+// ordinary forecast even when the post also mentions banked credits elsewhere.
+function ordinaryTiming(evidence, publishedAt) {
+  const text = String(evidence || '');
+  return /\breset(?:s|ting)?\b/i.test(text) && !/\bbanked\b|\breset (?:credits?|tokens?)\b/i.test(text) ? calendarWindow(text, publishedAt) : null;
+}
+function broad(window) { return window?.precision === 'week' || window?.precision === 'range'; }
 function timingRank(post) {
   if (post.eta && post.eta.timeClass !== 'prediction') return 3;
   if (post.timeWindow?.precision === 'date' || post.eta) return 2;
@@ -54,4 +70,4 @@ function windowBounds(window) {
   }
   return { start: instant(window.startDate, 0, 0), end: instant(window.endDate, 23, 59) + 60000 };
 }
-module.exports = { calendarWindow, RANGE_HINT, timingRank, compatible, resolveWindow, windowBounds, linkedTiming };
+module.exports = { calendarWindow, ordinaryTiming, broad, RANGE_HINT, timingRank, compatible, resolveWindow, windowBounds, linkedTiming };

@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld('api', {
   setPluginMarketplaceSource: url => ipcRenderer.invoke('plugin-marketplace-source', url),
   getTiboRadar: () => ipcRenderer.invoke('tibo-radar-get'),
   getTiboModel: () => ipcRenderer.invoke('tibo-model-get'),
+  testTiboModel: (value) => ipcRenderer.invoke('tibo-model-test', value),
+  testTiboJev: (value) => ipcRenderer.invoke('tibo-jev-test', value),
   saveTiboModel: (value) => ipcRenderer.invoke('tibo-model-save', value),
   getTiboJev: () => ipcRenderer.invoke('tibo-jev-get'),
   saveTiboJev: (value) => ipcRenderer.invoke('tibo-jev-save', value),

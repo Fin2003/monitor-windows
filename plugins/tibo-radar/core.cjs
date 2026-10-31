@@ -1,7 +1,7 @@
 const HOUR = 3600000;
 const { postPresentation } = require('./presentation.cjs');
 const { provisional } = require('./semantic.cjs');
-const { calendarWindow, timingRank, compatible } = require('./forecast-window.cjs');
+const { calendarWindow, timingRank, compatible, ordinaryTiming, broad } = require('./forecast-window.cjs');
 const RESET = /\breset(?:s|ting|ed|ing)?\b/i;
 const BANKED = /\bbanked\b|\breset credits?\b|\breset tokens?\b/i;
 const NEGATIVE = /\b(?:not|never|haven't|hasn't|didn't|won't|will not|no)\b.{0,30}\b(?:reset|done|propagated|completed)\b|\breset\b.{0,25}\b(?:not|isn't)\b.{0,15}\b(?:done|complete|propagated)\b/i;
@@ -115,13 +115,15 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
     const resetParent = parents.find(q => RESET.test(q.text));
     const genericReply = !RESET.test(p.text) || /^\s*(?:all reset(?: for everyone)?|reset (?:is )?(?:done|completed|all propagated))[.!\s]*$/i.test(p.text);
     if (resetParent && BANKED.test(resetParent.text) && genericReply) classification.banked = true;
+    if (classification.kind === 'forecast' && classification.banked && ordinaryTiming(classification.raw?.evidence ?? classification.keyText, p.publishedAt))
+      Object.assign(classification, { banked: false, alsoBanked: true });
     if (classification.banked) classification.eta = null;
     else if (classification.eta && !classification.eta.timeClass) classification.eta = { ...classification.eta,
       timeClass: classification.eta.inferredMidnight ? 'prediction' : classification.eta.sourcePostId && classification.eta.sourcePostId !== p.id ? 'inferred' : 'announced' };
     // Old nearby-date windows did not verify that the hint concerned this reset.
     const cachedWindow = classification.timeWindow?.sourcePostId && classification.timeWindow.evidenceVersion !== 2 ? null : classification.timeWindow;
     const timeWindow = classification.kind === 'forecast' && !classification.banked ? cachedWindow || calendarWindow(p.text, p.publishedAt) : null;
-    if (timeWindow?.precision === 'week' && (!classification.eta || classification.eta.timeClass === 'prediction')) classification.eta = null;
+    if (broad(timeWindow) && (!classification.eta || classification.eta.timeClass === 'prediction')) classification.eta = null;
     return { ...p, ...classification, timeWindow, resetRelated: classification.kind !== 'irrelevant', ancestors: parents.map(q => q.id) };
   }).sort((a, b) => a.publishedAt - b.publishedAt);
   const events = [];

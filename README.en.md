@@ -8,7 +8,7 @@ AI quotas, hardware metrics and Tibo Radar on your Windows secondary display.
 
 ## Start
 
-- **EXE:** [Download Windows installer (1.3.6)](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.6/Monitor-Windows-1.3.6-Setup-x64.exe), install it and choose your display. Runtime dependencies are included; Windows 10/11 x64 is required.
+- **EXE:** [Download Windows installer (1.3.7)](https://github.com/Fin2003/monitor-windows/releases/download/v1.3.7/Monitor-Windows-1.3.7-Setup-x64.exe), install it and choose your display. Runtime dependencies are included; Windows 10/11 x64 is required.
 - **Source:** download the `main` branch and run `start.bat`; first launch installs dependencies. You can also run `install-dependencies.bat` first. [Source setup](docs/startup.md)
 - **ESP32 screen:** use the [ESP32 edition](https://github.com/Fin2003/monitor-windows/tree/esp32) for firmware downloads and an automated AI installation prompt.
 
