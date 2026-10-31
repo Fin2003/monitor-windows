@@ -36,7 +36,7 @@
     : data.meta.repliesStatus === 'ready' ? `回复已获取 · ${date(data.meta.repliesSuccess)}`
     : data.meta.repliesStatus === 'login_required' && xStatus === 'connected' ? '回复待检查'
     : ({ off: '回复待检查', login_required: '回复待连接', page_error: '回复加载失败', rate_limited: '回复限流',
-      challenge: 'X 需验证', redirected: '回复跳转', loading: '回复未返回', coverage_incomplete: '回复覆盖不足' })[data.meta.repliesStatus] || '回复待检查');
+      challenge: 'X 需验证', network_error: 'X 网络失败', redirected: '回复跳转', loading: '回复未返回', coverage_incomplete: '回复覆盖不足' })[data.meta.repliesStatus] || '回复待检查');
   async function checkXStatus() {
     if (xCheckBusy || !data.config.repliesEnabled) return;
     xCheckBusy = true;
@@ -91,6 +91,22 @@
       switchError = '';
       jevResult = { ok: true, text: 'JEV 连接已保存' };
     } catch (e) { jevResult = { ok: false, error: e.message }; }
+    finally { jevBusy = false; }
+  }
+  async function modelTest() {
+    if (modelBusy || !modelReady || modelLoading) return;
+    modelBusy = true;
+    modelResult = { ok: true, text: '正在发送「你好」…' };
+    try { modelResult = await window.api.testTiboModel({ ...modelDraft }); }
+    catch (e) { modelResult = { ok: false, error: e.message }; }
+    finally { modelBusy = false; }
+  }
+  async function jevTest() {
+    if (jevBusy || !jevReady) return;
+    jevBusy = true;
+    jevResult = { ok: true, text: '正在发送「你好」…' };
+    try { jevResult = await window.api.testTiboJev({ ...jevDraft }); }
+    catch (e) { jevResult = { ok: false, error: e.message }; }
     finally { jevBusy = false; }
   }
   function percent(value) { return `${Math.round((value || 0) * 100)}%`; }
@@ -227,7 +243,7 @@
         {#if modelDraft.hasApiKey}<label class="wide clear-key"><input type="checkbox" bind:checked={modelDraft.clearKey} />清除已保存密钥</label>{/if}
         <label class="wide">模型名<input bind:value={modelDraft.model} placeholder="模型 ID" spellcheck="false" /></label>
       </div>
-      <div class="model-actions"><button disabled={!modelReady} onclick={modelAction}>{modelBusy ? '保存中…' : '保存连接'}</button></div>
+      <div class="model-actions"><button disabled={!modelReady} onclick={modelAction}>{modelBusy ? '处理中…' : '保存连接'}</button><button disabled={!modelReady} onclick={modelTest}>测试发送</button></div>
     </fieldset>
     {#if modelResult}<div class:success={modelResult.ok} class:warning={!modelResult.ok} class="model-result" role="status">{modelResult.ok ? modelResult.text : modelResult.error}{#if modelResult.elapsedMs !== undefined}<small>{modelResult.status ? `HTTP ${modelResult.status} · ` : ''}{modelResult.elapsedMs} ms</small>{/if}</div>{/if}
     {:else}
@@ -240,7 +256,7 @@
         <label class="wide">API Key<input type="password" bind:value={jevDraft.apiKey} placeholder={jevDraft.hasApiKey ? '已保存' : 'API Key'} autocomplete="off" /></label>
         {#if jevDraft.hasApiKey}<label class="wide clear-key"><input type="checkbox" bind:checked={jevDraft.clearKey} />清除已保存密钥</label>{/if}
       </div>
-      <div class="model-actions"><button disabled={!jevReady} onclick={jevAction}>{jevBusy ? '保存中…' : '保存连接'}</button></div>
+      <div class="model-actions"><button disabled={!jevReady} onclick={jevAction}>{jevBusy ? '处理中…' : '保存连接'}</button><button disabled={!jevReady} onclick={jevTest}>测试发送</button></div>
       {#if jevLoadError}<p class="warning" role="alert">{jevLoadError}</p>{/if}
       {#if jevResult}<div class:success={jevResult.ok} class:warning={!jevResult.ok} class="model-result" role="status">{jevResult.ok ? jevResult.text : jevResult.error}{#if jevResult.elapsedMs !== undefined}<small>{jevResult.status ? `HTTP ${jevResult.status} · ` : ''}{jevResult.elapsedMs} ms</small>{/if}</div>{/if}
     </fieldset>

@@ -16,12 +16,19 @@ function normalize(value) {
   return { name: String(value.name || '').trim(), baseUrl, format, model, endpoint };
 }
 
+function logLine(file, parts) {
+  if (!file) return;
+  try { require('node:fs').appendFileSync(file, `${new Date().toISOString()} ${parts.join(' ')}
+`); } catch (_) {}
+}
+
 class ModelConnection {
   constructor(store, secure, fetchImpl = fetch) {
     this.store = store;
     this.secure = secure;
     this.fetch = fetchImpl;
     this.busy = false;
+    this.logFile = null;
   }
   get() {
     const c = this.store.get('tiboRadarModel') || {};
@@ -104,6 +111,8 @@ class ModelConnection {
       if (c.format === 'responses') body.reasoning = { effort: 'low' };
       else if (c.format === 'chat') body.reasoning_effort = 'low';
     }
+    const startedAt = Date.now();
+    logLine(this.logFile, ['extract start', c.model, `prompt=${prompt.length}ch`, `timeout=${timeoutMs}ms`]);
     try {
       const send = () => this.fetch(c.endpoint, { method: 'POST', headers, body: JSON.stringify(body), redirect: 'error', credentials: 'omit', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs) });
       let response = await send();
@@ -116,12 +125,15 @@ class ModelConnection {
         });
         if (!signal?.aborted) response = await send();
       }
+      logLine(this.logFile, ['extract response', `HTTP ${response.status}`, `${Date.now() - startedAt}ms`]);
       if (!response.ok) throw new Error(`模型 HTTP ${response.status}`);
       const json = await response.json();
+      logLine(this.logFile, ['extract body', `${Date.now() - startedAt}ms`]);
       const text = c.format === 'chat' ? json.choices?.[0]?.message?.content : c.format === 'anthropic' ? json.content?.filter(p => p.type === 'text').map(p => p.text).join('\n') : json.output?.flatMap(p => p.content || []).filter(p => p.type === 'output_text').map(p => p.text).join('\n');
       if (typeof text !== 'string') throw Object.assign(new Error('模型未返回 JSON 文本'), { code: 'INVALID_MODEL_OUTPUT' });
       try { return JSON.parse(text); } catch { throw Object.assign(new Error('模型返回的内容不是有效 JSON'), { code: 'INVALID_MODEL_OUTPUT' }); }
     } catch (error) {
+      logLine(this.logFile, ['extract failed', `${Date.now() - startedAt}ms`, String(error.message).split(key || ' ').join('[REDACTED]').slice(0, 200)]);
       throw Object.assign(new Error(key ? String(error.message).split(key).join('[REDACTED]') : error.message), { code: error.code });
     }
   }

@@ -36,7 +36,7 @@ class TiboRadar {
       for (const post of saved.posts || []) if (post.id) this.posts.set(post.id, post);
       for (const post of saved.contextPosts || []) if (post.id) this.contextPosts.set(post.id, post);
       this.pendingIds = new Set(saved.pendingIds || []);
-      this.meta = { ...this.meta, ...saved.meta, errors: [] };
+      this.meta = { ...this.meta, ...saved.meta, errors: [], repliesRetryAt: null, repliesFailures: 0 };
     } catch (_) {}
     try {
       const imported = JSON.parse(fs.readFileSync(`${this.file}.replies.json`,'utf8'));
@@ -377,7 +377,7 @@ class TiboRadar {
       const recentForecasts = [...this.posts.values()].filter(post => post.publishedAt >= Date.now() - 2 * 86400000
         && semantic.needsTimeContext(post) && (!post.analysis || (post.analysis.kind === 'forecast' && !post.analysis.banked)));
       const requiredAt = recentForecasts.length ? Math.min(...recentForecasts.map(post => post.publishedAt - 2 * 86400000)) : null;
-      const data = await this.timeline(true, requiredAt !== null ? { oldestRequiredAt: requiredAt, timeoutMs: 45000 } : {});
+      const data = await this.timeline(true, requiredAt !== null ? { oldestRequiredAt: requiredAt, timeoutMs: 100000 } : {});
       if (generation !== this.generation) return this.snapshot();
       if (requiredAt !== null && (!Number.isFinite(data.coverageStart) || data.coverageStart > requiredAt)) {
         const error = new Error('X 回复未覆盖预告前两天');
@@ -406,7 +406,7 @@ class TiboRadar {
       this.meta.repliesCoverageStart = Number.isFinite(error.diagnostic?.oldestAt) ? error.diagnostic.oldestAt : null;
       if (error.ids?.length) this.pendingIds = new Set([...error.ids.filter(id=>!this.posts.has(id) && !this.contextPosts.has(id)),...this.pendingIds]);
       this.meta.repliesFailures = (this.meta.repliesFailures || 0) + 1;
-      this.meta.repliesRetryAt = Date.now() + Math.min(60, 5 * 2 ** Math.min(this.meta.repliesFailures, 4)) * 60000;
+      this.meta.repliesRetryAt = Date.now() + (error.code === 'network_error' ? 2 : Math.min(60, 5 * 2 ** Math.min(this.meta.repliesFailures, 4))) * 60000;
       this.meta.errors.push(`X 回复：${error.message}`);
     }
     else if (this.meta.repliesError) this.meta.errors.push(`X 回复：${this.meta.repliesError}`);
@@ -504,7 +504,7 @@ class TiboRadar {
         post.analysisFailures = (post.analysisFailures || 0) + 1;
         // Busy/unavailable gateways (429/5xx) recover quickly: retry within minutes, not the 5-60 min used for
         // errors such as a rejected key or invalid output.
-        const transient = /HTTP (?:429|5\d\d)\b/.test(error.message);
+        const transient = /HTTP (?:429|5\d\d)\b|aborted due to timeout|timed out|超时/i.test(error.message);
         post.analysisRetryAt = Date.now() + (transient ? Math.min(4, post.analysisFailures)
           : Math.min(60, 5 * 2 ** Math.min(post.analysisFailures - 1, 4))) * 60000;
         post.analysisError = error.message;

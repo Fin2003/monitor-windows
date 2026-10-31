@@ -280,6 +280,9 @@ function setupIPC() {
     return { ...saved, ...jevConfig(saved), hasApiKey: saved.hasApiKey };
   });
   ipcMain.handle('tibo-jev-save', async (_event, value) => { const saved = await tiboJev.save(jevConfig(value)); tiboRadar?.connectionChanged('jev'); return saved; });
+  // Sends a real "你好" with the form values (saved or not) so the endpoint, key and model are proven to answer.
+  ipcMain.handle('tibo-model-test', (_event, value) => tiboModel.test(value));
+  ipcMain.handle('tibo-jev-test', (_event, value) => tiboJev.test(jevConfig(value)));
   ipcMain.handle('tibo-radar-refresh', () => tiboRadar.refresh({forceReplies:true}));
   ipcMain.handle('tibo-x-status', async () => ({ connected: await tiboRadar.hasXLogin(), checkedAt: Date.now() }));
   ipcMain.handle('tibo-x-connect', async () => {
@@ -732,6 +735,7 @@ app.whenReady().then(async () => {
   pluginManager = new PluginManager(configStore);
   providerManager = new ProviderManager(configStore);
   tiboModel = new ModelConnection(createModelStore(path.join(app.getPath('userData'), 'tibo-radar-model.json'), configStore), safeStorage, (url, options) => net.fetch(url, options));
+  tiboModel.logFile = path.join(app.getPath('userData'), 'tibo-radar-llm.log');
   tiboJev = new ModelConnection(createModelStore(path.join(app.getPath('userData'), 'tibo-radar-jev.json')), safeStorage, (url, options) => net.fetch(url, options));
   tiboRadar = new TiboRadar(configStore, { model: tiboModel, jev: tiboJev,
     hasXLogin: async () => (await session.fromPartition('persist:tibo-radar-public').cookies.get({ url: 'https://x.com', name: 'auth_token' })).length > 0 });

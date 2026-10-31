@@ -125,7 +125,7 @@ function radarPage({ radar = null, now = Date.now() } = {}) {
   return {
     type: 'radar', health: text(state.overviewLabel, 16), recentType: text(recent?.type || '--', 12),
     age: elapsed(recent?.publishedAt, now), recentAt: recent ? formatRadarDate(recent.publishedAt, zone) : '无记录',
-    outlook: text(outlook.label, 28), badge: text(outlook.badge, 20), tone: outlook.tone,
+    outlook: text(outlook.label, 28), badge: text(outlook.type && outlook.badge === '等待重置' ? outlook.type : outlook.badge, 20), tone: outlook.tone,
     banks, events, posts: radarPosts(data, 3),
     updated: last === null ? '等待更新' : clock(last, zone) + ' 更新',
     timezone: displayTimeZoneLabel(zone),

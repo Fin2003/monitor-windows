@@ -8,10 +8,12 @@ const {radarPosts}=require('./radar-detail.cjs');
 const txt=(value,max=100)=>[...String(value??'')].slice(0,max).join('');
 const span=minutes=>{const d=Math.floor(minutes/1440),h=Math.floor(minutes%1440/60),m=minutes%60;
   return d?`${d} 天 ${h} 小时`:h?`${h} 小时 ${m} 分`:`${m} 分`;};
-// Big line carries the exact day ("10/04 18:00"); the line under it says how long is left or how late it is.
+// Big line carries the exact day ("10/04 18:00"); the line under it says how late it is (no remaining-time
+// countdown) and Tibo's date range when the post gave one.
 function outlookLines(o){
   const minutes=s=>Number(String(s||'').match(/\d+/)?.[0]);
-  const detail=o.countdown?`剩余时间 ${span(minutes(o.countdown))}`:o.elapsed?`已超时 ${span(minutes(o.elapsed))}`:o.prediction&&o.detail?`预测 ${o.detail}`:'';
+  const base=o.elapsed?`已超时 ${span(minutes(o.elapsed))}`:o.prediction&&o.detail?`预测 ${o.detail}`:'';
+  const detail=o.range&&!o.prediction?[base,`范围 ${o.range}`].filter(Boolean).join(' · '):base;
   return {outlook:o.dateLabel?`${o.dateLabel} ${o.label}`:o.label,outlookDetail:detail,outlookLate:!!o.late};
 }
 // Screen geometry of the firmware (UI_MARGIN / UI_GAP in monitor_theme.h).
@@ -67,7 +69,7 @@ function dashboard({config={},cache={},system=null,radar=null,now=Date.now()}={}
   const overview=overviewLayout(config.compactOverview?.slots||[],{coding:codingFor,sensor:sensorFor});
   const sensors=overview?overview.sensors:(sc.selectedSensors||[]).slice(0,2).map(sensorFor);
   return {coding:codingCards({config,cache,now})[0],...(overview?{codings:overview.codings,layout:overview.entries}:{}),
-    sensors,radar:{type:txt(state.latestType||'--',20),at:txt(formatRadarDate(state.latestAt,radar?.config?.displayTimeZone),30),age:txt(formatRadarAge(state.latestAt,now),25),health:txt(state.overviewLabel,20),healthKind:state.kind,state:txt(outlook.badge,20),...(o=>({outlook:txt(o.outlook,45),outlookDetail:txt(o.outlookDetail,40),outlookLate:o.outlookLate}))(outlookLines(outlook)),posts:radarPosts(radar,3).map(p=>({...p,text:txt(p.text,90),tag:txt(p.tag,20),at:txt(p.at,30)}))},
+    sensors,radar:{type:txt(state.latestType||'--',20),at:txt(formatRadarDate(state.latestAt,radar?.config?.displayTimeZone),30),age:txt(formatRadarAge(state.latestAt,now),25),health:txt(state.overviewLabel,20),healthKind:state.kind,state:txt(outlook.type&&outlook.badge==='等待重置'?outlook.type:outlook.badge,20),...(o=>({outlook:txt(o.outlook,45),outlookDetail:txt(o.outlookDetail,40),outlookLate:o.outlookLate}))(outlookLines(outlook)),posts:radarPosts(radar,3).map(p=>({...p,text:txt(p.text,90),tag:txt(p.tag,20),at:txt(p.at,30)}))},
     sourceAge:system?.fetchedAt?Math.max(0,Math.floor((now-system.fetchedAt)/1000)):null};
 }
 module.exports={dashboard};

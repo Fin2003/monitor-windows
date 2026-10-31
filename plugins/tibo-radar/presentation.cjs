@@ -30,7 +30,7 @@ function radarState(snapshot, now = Date.now()) {
   const primary = errors.some(error => !/^(?:X 回复：|历史补充：|(?:LLM|GLM|JEV)(?:\s|：))/.test(error));
   const model = errors.some(error => /^(?:LLM|GLM|JEV)(?:\s|：)/.test(error));
   const replies = errors.some(error => error.startsWith('X 回复：'));
-  const replyLabel = {page_error:'回复加载失败',login_required:'回复需登录',rate_limited:'回复限流',challenge:'X 需验证',redirected:'回复跳转',loading:'回复未返回',coverage_incomplete:'回复覆盖不足'}[meta.repliesStatus] || '回复受限';
+  const replyLabel = {page_error:'回复加载失败',login_required:'回复需登录',rate_limited:'回复限流',challenge:'X 需验证',network_error:'X 网络失败',redirected:'回复跳转',loading:'回复未返回',coverage_incomplete:'回复覆盖不足'}[meta.repliesStatus] || '回复受限';
   const issueLabel = primary ? '抓取异常' : model && replies ? `分析重试 · ${replyLabel}` : model ? '分析重试' : replies ? replyLabel : issue ? '历史待补' : '';
   let label = '未启用';
   let kind = 'muted';
@@ -85,17 +85,30 @@ function radarOutlook(snapshot, now = Date.now()) {
       basis: quota ? `监测账号周用量显著回落，检测于 ${formatRadarDate(reset.publishedAt, timeZone)}；不是 Tibo 完成通知，实际发生时间在两次采样之间` : `Tibo 完成通知 · ${formatRadarDate(reset.publishedAt, timeZone)}` };
   }
   if (!pending) return { label: '暂无预告', detail: '', late: false, badge: '', tone: 'muted' };
+  // Banked only when the forecast itself says banked ("Next two days will be resets... banked..."); otherwise Hard.
+  const forecastText = String(pending.forecast?.text || '');
+  const type = pending.forecast?.alsoBanked || /\bbanked\b|\breset credits?\b|\breset tokens?\b/i.test(forecastText) ? 'Banked' : 'Hard';
+  const typed = outlook => ({ ...outlook, type });
+  return typed(pendingOutlook());
+  function pendingOutlook() {
   const at = finiteNumber(pending.eta?.at);
-  if (!at && pending.timeWindow) {
-    const { start, end } = windowBounds(pending.timeWindow);
-    const first = formatRadarDate(start, timeZone).slice(0, 5), last = formatRadarDate(end - 1, timeZone).slice(0, 5);
-    const late = now >= end;
-    return { label: late ? '超时 ' + Math.floor((now - end) / 60000) + ' 分' : first === last ? first : first + '–' + last,
+  let range = '', windowEnd = null;
+  if (pending.timeWindow) {
+    const bounds = windowBounds(pending.timeWindow);
+    // A span such as "next two days" starts on the posting date; never show it starting before the post.
+    const start = Math.max(bounds.start, finiteNumber(pending.forecast?.publishedAt) || bounds.start);
+    const first = formatRadarDate(start, timeZone).slice(0, 5), last = formatRadarDate(bounds.end - 1, timeZone).slice(0, 5);
+    range = first === last ? first : first + '–' + last;
+    windowEnd = bounds.end;
+  }
+  if (!at && range) {
+    const late = now >= windowEnd;
+    return { label: late ? '超时 ' + Math.floor((now - windowEnd) / 60000) + ' 分' : range,
       detail: '', late, badge: late ? '已超时' : '等待重置', tone: late ? 'overdue' : 'forecast' };
   }
   if (!at) return { label: '未通报时间', detail: '', late: false, badge: '等待重置', tone: 'forecast' };
   const date = formatRadarDate(at, timeZone);
-  if (pending.eta.timeClass === 'prediction') return { label: '未通报时间', detail: date, late: false,
+  if (pending.eta.timeClass === 'prediction') return { label: '未通报时间', detail: range ? date + ' · 范围 ' + range : date, range, late: false,
     badge: `预测 ${date.slice(-5)}`, tone: 'forecast', prediction: true,
     basis: `${pending.eta.basis || '既有默认时刻预测'} · 不是 Tibo 通报的准确时刻，不据此判定超时或重置` };
   const until = finiteNumber(pending.observationUntil) ?? at + 2 * 3600000;
@@ -108,10 +121,12 @@ function radarOutlook(snapshot, now = Date.now()) {
   // Date-only announcements use an estimated end-of-day time, not an explicit clock.
   const estimated = !inferred && !!pending.eta.inferredMidnight;
   const time = date.slice(-5);
-  return { label: estimated ? `预计 ${time}` : time, time, dateLabel: date.slice(0, 5), countdown, elapsed, inferred, estimated,
-    detail: date.slice(0, 5) + ' · ' + status, late,
+  // A forecast with both a predicted time and Tibo's date range ("next two days") shows both.
+  return { label: estimated ? `预计 ${time}` : time, time, dateLabel: date.slice(0, 5), countdown, elapsed, inferred, estimated, range,
+    detail: date.slice(0, 5) + ' · ' + status + (range ? ' · 范围 ' + range : ''), late,
     badge: inferred ? late ? '预测已过' : '关联预测' : estimated ? late ? '预计已过' : '等待重置' : late ? '已超时' : '等待重置', tone: late ? 'overdue' : 'forecast',
     basis: `${estimated ? '预计时间（原文未给出具体时刻，按默认规则推算） · ' : ''}${pending.eta.basis || '预计重置时间'} · ${observation || '到时无完成通知，观察两小时后仍继续监测'} · 尚无完成通知，不自动确认` };
+  }
 }
 
 const radarSentenceSegmenter = new Intl.Segmenter('en', {granularity:'sentence'});

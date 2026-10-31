@@ -134,7 +134,7 @@ function hourCandidates(post, nearby = []) {
   const targetWindow = calendarWindow(post.text, post.publishedAt);
   const nearbyClocks = nearby.flatMap(hint => {
     if (BANKED_HINT.test(hint.text)) return [];
-    if (targetWindow?.precision === 'week' && !linkedTiming(post, hint)) return [];
+    if ((targetWindow?.precision === 'week' || targetWindow?.precision === 'range') && !linkedTiming(post, hint)) return [];
     const linked = hint.replyToId === post.id || post.replyToId === hint.id;
     if (RELATIVE.test(hint.text) && (linked || (targetDate && RESET.test(hint.text)))) {
       const relative = estimate(hint.text, hint.publishedAt);
@@ -217,7 +217,7 @@ function toAnalysis(post, decision, hour = null, nearby = []) {
   if (kind === 'completion' && !(banked ? BANKED_GRANTED.test(post.text) && !BANKED_UNCERTAIN.test(post.text) : classify(post).kind === 'completion')) kind = 'mention';
   let candidate = !banked && kind === 'forecast' && hour?.supported ? hour.candidate : null;
   const declaredWindow = require('./forecast-window.cjs').calendarWindow(post.text, post.publishedAt);
-  if (candidate && candidate.sourceId !== post.id && declaredWindow?.precision === 'week'
+  if (candidate && candidate.sourceId !== post.id && (declaredWindow?.precision === 'week' || declaredWindow?.precision === 'range')
     && !linkedTiming(post, nearby.find(p => p.id === candidate.sourceId))) candidate = null;
   if (candidate && candidate.sourceId !== post.id && declaredWindow
     && (candidate.date < declaredWindow.startDate || candidate.date > declaredWindow.endDate)) candidate = null;
