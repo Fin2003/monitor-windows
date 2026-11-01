@@ -144,7 +144,7 @@ function radarPostExcerpt(text) {
 
 // The newest colored reset post stays on top of the list until 4 hours after its reset finished
 // (a completion post: 4 hours after it; a related post without an event: 4 hours after posting).
-const RESET_PIN_AFTER_MS = 4 * 3600000, RESET_PIN_WINDOW_MS = 3 * 86400000;
+const RESET_PIN_AFTER_MS = 4 * 3600000, RESET_PIN_WINDOW_MS = 3 * 86400000, DELIVERED_ROW_MS = 86400000;
 function resetPinId(posts, events, now) {
   const post = posts.filter(p => p.display?.category === 'reset' && p.display.label && now - (finiteNumber(p.publishedAt) || 0) <= RESET_PIN_WINDOW_MS)
     .sort((a, b) => (finiteNumber(b.publishedAt) || 0) - (finiteNumber(a.publishedAt) || 0))[0];
@@ -161,9 +161,15 @@ function latestRadarPosts(snapshot, now = Date.now()) {
     .filter(post => post && !post.manual && typeof post.text === "string" && post.text.trim())
     .map(post => ({ ...post, display: post.display || postPresentation(post) }));
   const pinId = resetPinId(posts, snapshot?.events, now);
-  return posts.map(post => post.id === pinId ? { ...post, resetPinned: true } : post)
+  const sorted = posts.map(post => post.id === pinId ? { ...post, resetPinned: true } : post)
     .sort((a,b) => Number(!!b.pinned) - Number(!!a.pinned) || Number(!!b.resetPinned) - Number(!!a.resetPinned)
       || (finiteNumber(b.publishedAt) || 0) - (finiteNumber(a.publishedAt) || 0));
+  // The newest delivered reset (Banked +1 or 重置完成) from the last day stays in the top two rows,
+  // which every widget shows, so chat replies posted right after it cannot push it out.
+  const delivered = sorted.findIndex(post => ['banked', 'completed'].includes(post.display?.tone)
+    && now - (finiteNumber(post.publishedAt) || 0) <= DELIVERED_ROW_MS);
+  if (delivered > 1) sorted.splice(1, 0, ...sorted.splice(delivered, 1));
+  return sorted;
 }
 
 function postPresentation(post) {

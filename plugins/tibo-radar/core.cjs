@@ -89,6 +89,13 @@ function classify(post, contextHasReset = false) {
   return { kind, banked, eta: kind === 'forecast' ? estimate(text, post.publishedAt, banked) : null, keyText: (keys.length ? keys : lines).join('\n') };
 }
 
+// Tibo counts banked resets as they land: "Banked 1/2", "banked 2/2!". No "reset" word, so the
+// keyword gate never sends it to the model; it is a delivered banked reset by its own wording.
+function bankedProgress(text) {
+  const m = /^\s*banked\s+(\d)\s*\/\s*(\d)\s*[.!]*\s*$/i.exec(String(text || ''));
+  return m && +m[1] >= 1 && +m[1] <= +m[2] ? { part: +m[1], of: +m[2] } : null;
+}
+
 function buildState(posts, now = Date.now(), { useLLM = false, allowRules = false } = {}) {
   const valid = posts.filter(p => p.author?.toLowerCase() === 'thsottiaux' && p.id && Number.isFinite(p.publishedAt));
   const map = new Map(valid.map(p => [p.id, p]));
@@ -111,6 +118,8 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
         // Waiting for the model: clear wording still gives a provisional forecast, so the status moves on.
         : provisional(p, parents) || { kind: RESET.test(p.text) ? 'mention' : 'irrelevant', banked: false, eta: null, keyText: p.text, source: 'pending' })
       : classify(p, parents.some(q => RESET.test(q.text)))) };
+    const progress = bankedProgress(p.text);
+    if (progress) Object.assign(classification, { kind: 'completion', banked: true, eta: null, keyText: p.text, source: 'rule', bankedProgress: progress });
     // Only generic acknowledgements inherit context, not explicit usage resets.
     const resetParent = parents.find(q => RESET.test(q.text));
     const genericReply = !RESET.test(p.text) || /^\s*(?:all reset(?: for everyone)?|reset (?:is )?(?:done|completed|all propagated))[.!\s]*$/i.test(p.text);
@@ -166,6 +175,14 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
             || (e.forecast.forecastType === 'scheduled' && forecastCalendarDate(e.forecast) === completedDate))
           && !events.some(other => other.completion && other.completion.publishedAt > e.forecast.publishedAt));
         if (candidates.length === 1) related = candidates;
+        // The last of a counted series ("Banked 2/2") closes the open forecast that promised those resets;
+        // an earlier part ("1/2") leaves it open for the rest.
+        if (!related.length && p.bankedProgress?.part === p.bankedProgress?.of) {
+          const promised = [...events].reverse().find(e => e.forecast && !e.banked && !e.completion
+            && p.publishedAt > e.forecast.publishedAt && p.publishedAt - e.forecast.publishedAt <= 72 * HOUR
+            && (e.forecast.alsoBanked || BANKED.test(e.forecast.text || '')));
+          if (promised) related = [promised];
+        }
       }
       if (related.length) {
         for (const e of related) { e.completion = p; e.banked = p.banked; }
@@ -211,4 +228,4 @@ function buildState(posts, now = Date.now(), { useLLM = false, allowRules = fals
   }), latest, recentReset, pending, unresolved, banked };
 }
 
-module.exports = { HOUR, classify, estimate, buildState, pacificTime };
+module.exports = { HOUR, classify, estimate, buildState, pacificTime, bankedProgress };
