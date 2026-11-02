@@ -164,11 +164,11 @@ function latestRadarPosts(snapshot, now = Date.now()) {
   const sorted = posts.map(post => post.id === pinId ? { ...post, resetPinned: true } : post)
     .sort((a,b) => Number(!!b.pinned) - Number(!!a.pinned) || Number(!!b.resetPinned) - Number(!!a.resetPinned)
       || (finiteNumber(b.publishedAt) || 0) - (finiteNumber(a.publishedAt) || 0));
-  // The newest delivered reset (Banked +1 or 重置完成) from the last day stays in the top two rows,
-  // which every widget shows, so chat replies posted right after it cannot push it out.
+  // The newest delivered reset (Banked +1 or 重置完成) from the last day goes on top, above the pending
+  // forecast and newer chat replies.
   const delivered = sorted.findIndex(post => ['banked', 'completed'].includes(post.display?.tone)
     && now - (finiteNumber(post.publishedAt) || 0) <= DELIVERED_ROW_MS);
-  if (delivered > 1) sorted.splice(1, 0, ...sorted.splice(delivered, 1));
+  if (delivered > 0) sorted.unshift(...sorted.splice(delivered, 1));
   return sorted;
 }
 
