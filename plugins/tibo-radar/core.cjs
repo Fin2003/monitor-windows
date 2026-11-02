@@ -89,10 +89,10 @@ function classify(post, contextHasReset = false) {
   return { kind, banked, eta: kind === 'forecast' ? estimate(text, post.publishedAt, banked) : null, keyText: (keys.length ? keys : lines).join('\n') };
 }
 
-// Tibo counts banked resets as they land: "Banked 1/2", "banked 2/2!". No "reset" word, so the
+// Tibo counts banked resets as they land: "Banked 1/2", "Day 28/ Banked 2/2". No "reset" word, so the
 // keyword gate never sends it to the model; it is a delivered banked reset by its own wording.
 function bankedProgress(text) {
-  const m = /^\s*banked\s+(\d)\s*\/\s*(\d)\s*[.!]*\s*$/i.exec(String(text || ''));
+  const m = /^\s*(?:day\s*\d+\s*\/\s*)?banked\s+(\d)\s*\/\s*(\d)\s*[.!]*\s*$/i.exec(String(text || ''));
   return m && +m[1] >= 1 && +m[1] <= +m[2] ? { part: +m[1], of: +m[2] } : null;
 }
 
