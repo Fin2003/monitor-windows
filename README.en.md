@@ -58,6 +58,6 @@ Updated by [GH Star History for Actions](https://github.com/kernalix7/GH-Star-Hi
 ![GitHub Stars](https://img.shields.io/github/stars/Fin2003/monitor-windows?style=flat&label=Stars)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Fin2003/monitor-windows/esp32/docs/star-history/chart-dark.svg?v=274dcaa5add9ed48">
-  <img alt="Star history" src="https://raw.githubusercontent.com/Fin2003/monitor-windows/esp32/docs/star-history/chart.svg?v=e8b120d9f183d699" width="900">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Fin2003/monitor-windows/esp32/docs/star-history/chart-dark.svg?v=00245543454474b3">
+  <img alt="Star history" src="https://raw.githubusercontent.com/Fin2003/monitor-windows/esp32/docs/star-history/chart.svg?v=02970652d1f2210c" width="900">
 </picture>
