@@ -35,6 +35,6 @@ AI 额度／余额查询 · CPU/GPU/内存监控 · Tibo 雷达 · 缩略总览�
 ![GitHub Stars](https://img.shields.io/github/stars/Fin2003/monitor-windows?style=flat&label=Stars)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Fin2003/monitor-windows/main/docs/star-history/chart-dark.svg?v=274dcaa5add9ed48">
-  <img alt="Star 趋势" src="https://raw.githubusercontent.com/Fin2003/monitor-windows/main/docs/star-history/chart.svg?v=e8b120d9f183d699" width="900">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Fin2003/monitor-windows/main/docs/star-history/chart-dark.svg?v=00245543454474b3">
+  <img alt="Star 趋势" src="https://raw.githubusercontent.com/Fin2003/monitor-windows/main/docs/star-history/chart.svg?v=02970652d1f2210c" width="900">
 </picture>
